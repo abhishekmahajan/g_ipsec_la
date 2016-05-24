@@ -19,8 +19,7 @@ EXTRA_CFLAGS += -Wall -I../../asfffp/driver/
 obj-m += asffwdcache.o
 
 asffwdcache-y := asffwd.o \
-		asffwd6.o \
-		fwdproc.o
+		fwdproc.o #asffwd6.o
 
 ifeq ($(CONFIG_ASF_IPV6), y)
 #asf-y += asffwd6.o

@@ -38,7 +38,11 @@
 #include <linux/inetdevice.h>
 #include "ipseccmn.h"
 #ifdef CONFIG_VIRTIO
+#ifdef ASF_FP_LINUX_CRYPTO
+#include "ipsec_linux_crypto.h"
+#else
 #include "ipsecvio.h"
+#endif
 #endif
 
 #define ASF_SECFP_BLOB_TIME_INTERVAL	1
@@ -1389,7 +1393,7 @@ inSA_t *secfp_findInv4SA(unsigned int ulVSGId,
 		*pHashVal = secfp_compute_hash(ulSPI);
 	}
 
-	ASFIPSEC_DEBUG("findInv4SA hashVal = %d, ulSPI=0x%x, daddr=%x ",
+	ASFIPSEC_DEBUG("findInv4SA hashVal = %d, ulSPI=0x%x, daddr=0x%x ",
 			*pHashVal, (unsigned int) ulSPI, daddr);
 	ASFIPSEC_DEBUG("ucProto = %d", ucProto);
 
@@ -1786,7 +1790,59 @@ static inline int secfp_updateInSA(inSA_t *pSA, SAParams_t *pSAParams)
 #elif defined(CONFIG_VIRTIO)
 static inline int secfp_updateInSA(inSA_t *pSA, SAParams_t *pSAParams)
 {
-	memcpy(&pSA->SAParams, pSAParams, sizeof(SAParams_t));
+	int keylen;
+	//Don't use here memcpy, it will not work here!!
+	//	memcpy(&pSA->SAParams, pSAParams, sizeof(SAParams_t));
+#ifdef ASF_FP_LINUX_CRYPTO
+        pSA->SAParams.ulSPI = pSAParams->ulSPI;
+        pSA->SAParams.ucProtocol = pSAParams->ucProtocol;
+        pSA->SAParams.tunnelInfo.addr.iphv4.daddr = pSAParams->tunnelInfo.addr.iphv4.daddr;
+        pSA->SAParams.bPropogateECN =  pSAParams->bPropogateECN;
+        pSA->SAParams.bEncrypt = pSAParams->bEncrypt;
+        pSA->SAParams.bAuth = pSAParams->bAuth;
+        pSA->SAParams.uICVSize = pSAParams->uICVSize;
+        pSA->SAParams.EncKeyLen = pSAParams->EncKeyLen;
+        pSA->SAParams.AuthKeyLen = pSAParams->AuthKeyLen;
+        pSA->SAParams.ucAuthAlgo = pSAParams->ucAuthAlgo;
+        pSA->SAParams.ucCipherAlgo = pSAParams->ucCipherAlgo;
+        memcpy(pSA->SAParams.ucAuthKey, pSAParams->ucAuthKey, pSAParams->AuthKeyLen);
+//for copying SALT
+	if(pSA->SAParams.bEncrypt == ASF_TRUE)
+	{
+		switch (pSA->SAParams.ucCipherAlgo)
+		{
+			case SECFP_AESCTR:
+				keylen = pSA->SAParams.EncKeyLen + AES_CTR_SALT_LEN;
+	memcpy (pSA->SAParams.ucNounceIVCounter, pSAParams->ucNounceIVCounter, AES_CTR_SALT_LEN); 
+			break;
+			case SECFP_AES_CCM_ICV8:
+			case SECFP_AES_CCM_ICV12:
+			case SECFP_AES_CCM_ICV16:
+				keylen = pSA->SAParams.EncKeyLen + AES_CCM_SALT_LEN;
+	memcpy (pSA->SAParams.ucNounceIVCounter, pSAParams->ucNounceIVCounter, AES_CCM_SALT_LEN); 
+			break;
+			case SECFP_AES_GCM_ICV8:
+			case SECFP_AES_GCM_ICV12:
+			case SECFP_AES_GCM_ICV16:
+				keylen = pSA->SAParams.EncKeyLen + AES_GCM_SALT_LEN;
+	memcpy (pSA->SAParams.ucNounceIVCounter, pSAParams->ucNounceIVCounter, AES_GCM_SALT_LEN); 
+			break;
+			case SECFP_NULL_AES_GMAC:
+				keylen = pSA->SAParams.EncKeyLen + AES_GMAC_SALT_LEN;
+	memcpy (pSA->SAParams.ucNounceIVCounter, pSAParams->ucNounceIVCounter, AES_GMAC_SALT_LEN); 
+			break;
+		default:
+			keylen = pSA->SAParams.EncKeyLen;
+		}
+	} 
+        memcpy(pSA->SAParams.ucEncKey, pSAParams->ucEncKey, keylen);
+        pSA->SAParams.bUseExtendedSequenceNumber = pSAParams->bUseExtendedSequenceNumber;
+        pSA->SAParams.bDoUDPEncapsulationForNATTraversal = pSAParams->bDoUDPEncapsulationForNATTraversal;
+        pSA->SAParams.bEncapsulationMode = pSAParams->bEncapsulationMode;
+        pSA->SAParams.IPsecNatInfo.usSrcPort = pSAParams->IPsecNatInfo.usSrcPort;
+        pSA->SAParams.IPsecNatInfo.usDstPort = pSAParams->IPsecNatInfo.usDstPort;
+        pSA->SAParams.IPsecNatInfo.ulNATt = pSAParams->IPsecNatInfo.ulNATt;
+#endif
 	return 0;
 }
 #endif
@@ -2023,8 +2079,59 @@ static inline int secfp_updateOutSA(outSA_t *pSA, void *buff)
 #elif defined(CONFIG_VIRTIO)
 static inline int secfp_updateOutSA(outSA_t *pSA, void *buff)
 {
+#ifdef ASF_FP_LINUX_CRYPTO
+	int keylen = 0;
 	SAParams_t *pSAParams = (SAParams_t *)(buff);
 	memcpy(&pSA->SAParams, pSAParams, sizeof(SAParams_t));
+        pSA->SAParams.ulSPI = pSAParams->ulSPI;
+        pSA->SAParams.ucProtocol = pSAParams->ucProtocol;
+        pSA->SAParams.tunnelInfo.addr.iphv4.daddr = pSAParams->tunnelInfo.addr.iphv4.daddr;
+        pSA->SAParams.bPropogateECN =  pSAParams->bPropogateECN;
+        pSA->SAParams.bEncrypt = pSAParams->bEncrypt;
+        pSA->SAParams.bAuth = pSAParams->bAuth;
+        pSA->SAParams.uICVSize = pSAParams->uICVSize;
+        pSA->SAParams.EncKeyLen = pSAParams->EncKeyLen;
+        pSA->SAParams.AuthKeyLen = pSAParams->AuthKeyLen;
+	pSA->SAParams.ucAuthAlgo = pSAParams->ucAuthAlgo;
+        pSA->SAParams.ucCipherAlgo = pSAParams->ucCipherAlgo;
+        memcpy(pSA->SAParams.ucAuthKey, pSAParams->ucAuthKey, pSAParams->AuthKeyLen);
+//To copy SALT
+	if(pSA->SAParams.bEncrypt == ASF_TRUE)
+	{
+		switch (pSA->SAParams.ucCipherAlgo)
+		{
+			case SECFP_AESCTR:
+				keylen = pSA->SAParams.EncKeyLen + AES_CTR_SALT_LEN;
+	memcpy (pSA->SAParams.ucNounceIVCounter, pSAParams->ucNounceIVCounter,AES_CTR_SALT_LEN); 
+			break;
+			case SECFP_AES_CCM_ICV8:
+			case SECFP_AES_CCM_ICV12:
+			case SECFP_AES_CCM_ICV16:
+				keylen = pSA->SAParams.EncKeyLen + AES_CCM_SALT_LEN;
+	memcpy (pSA->SAParams.ucNounceIVCounter, pSAParams->ucNounceIVCounter,AES_CCM_SALT_LEN); 
+			break;
+			case SECFP_AES_GCM_ICV8:
+			case SECFP_AES_GCM_ICV12:
+			case SECFP_AES_GCM_ICV16:
+				keylen = pSA->SAParams.EncKeyLen + AES_GCM_SALT_LEN;
+	memcpy (pSA->SAParams.ucNounceIVCounter, pSAParams->ucNounceIVCounter,AES_GCM_SALT_LEN); 
+			break;
+			case SECFP_NULL_AES_GMAC:
+				keylen = pSA->SAParams.EncKeyLen + AES_GMAC_SALT_LEN;
+	memcpy (pSA->SAParams.ucNounceIVCounter, pSAParams->ucNounceIVCounter,AES_GMAC_SALT_LEN); 
+			break;
+		default:
+			keylen = pSA->SAParams.EncKeyLen;
+		}
+       } 
+        memcpy(pSA->SAParams.ucEncKey, pSAParams->ucEncKey, keylen);
+        pSA->SAParams.bUseExtendedSequenceNumber = pSAParams->bUseExtendedSequenceNumber;
+        pSA->SAParams.bDoUDPEncapsulationForNATTraversal = pSAParams->bDoUDPEncapsulationForNATTraversal;
+        pSA->SAParams.bEncapsulationMode = pSAParams->bEncapsulationMode;
+        pSA->SAParams.IPsecNatInfo.usSrcPort = pSAParams->IPsecNatInfo.usSrcPort;
+        pSA->SAParams.IPsecNatInfo.usDstPort = pSAParams->IPsecNatInfo.usDstPort;
+        pSA->SAParams.IPsecNatInfo.ulNATt = pSAParams->IPsecNatInfo.ulNATt;
+#endif
 	return 0;
 }
 #endif
@@ -2772,12 +2879,17 @@ unsigned int secfp_createOutSA(
 #elif !defined(CONFIG_VIRTIO)
 	secfp_createOutSATalitosDesc(pSA);
 #endif
+#ifdef ASF_FP_LINUX_CRYPTO
+	asf_fp_linux_createOutSAVIpsec(pSA);
+#endif
+#if !defined(CONFIG_VIRTIO)
 #ifndef ASF_QMAN_IPSEC
-			//pSA->prepareOutDescriptor = secfp_prepareOutDescriptor;
+			pSA->prepareOutDescriptor = secfp_prepareOutDescriptor;
 #if defined(CONFIG_ASF_SEC3x)
 			pSA->prepareOutDescriptorWithFrags = secfp_prepareOutDescriptorWithFrags;
 #else
 			pSA->prepareOutDescriptorWithFrags = secfp_prepareOutDescriptor;
+#endif
 #endif
 #endif
 #ifndef ASF_SECFP_PROTO_OFFLOAD
@@ -3121,6 +3233,9 @@ unsigned int secfp_DeleteOutSA(unsigned int	ulSPDContainerIndex,
 						secfp_freeOutSA);
 			memset(&pOutSA->PolicyPPStats, 0x0,
 				sizeof(pOutSA->PolicyPPStats));
+#ifdef ASF_FP_LINUX_CRYPTO
+			asf_fp_linux_deleteOutSAVIpsec(pOutSA);
+#endif
 		}
 		for (ii = usDscpStart; ii < usDscpEnd; ii++)
 			pContainer->SAHolder.ulSAIndex[ii] =
@@ -3158,6 +3273,9 @@ unsigned int secfp_DeleteOutSA(unsigned int	ulSPDContainerIndex,
 				}
 				memset(&pOutSA->PolicyPPStats, 0x0,
 					sizeof(pOutSA->PolicyPPStats));
+#ifdef ASF_FP_LINUX_CRYPTO
+				asf_fp_linux_deleteOutSAVIpsec(pOutSA);
+#endif
 			}
 			ulSAIndex = pOutSALinkNode->ulSAIndex;
 			secfp_delOutSALinkNode(pContainer,
@@ -3295,6 +3413,9 @@ unsigned int secfp_CreateInSA(
 		secfp_createInSATalitosDesc(pSA);
 #endif
 #else
+#ifdef ASF_FP_LINUX_CRYPTO
+		asf_fp_linux_createInSAVIpsec(pSA);
+#else
 		/* New API for virtio IPsec */
 		if (!bVal)
 			local_bh_enable();
@@ -3302,13 +3423,15 @@ unsigned int secfp_CreateInSA(
 		if (!bVal)
 			local_bh_disable();
 #endif
-
+#endif
+#if !defined(CONFIG_VIRTIO)
 #ifndef ASF_QMAN_IPSEC
-			//pSA->prepareInDescriptor = secfp_prepareInDescriptor;
+			pSA->prepareInDescriptor = secfp_prepareInDescriptor;
 #if defined(CONFIG_ASF_SEC3x)
 			pSA->prepareInDescriptorWithFrags = secfp_prepareInDescriptorWithFrags;
 #else
 			pSA->prepareInDescriptorWithFrags = secfp_prepareInDescriptor;
+#endif
 #endif
 			pSA->inComplete = secfp_inComplete;
 			pSA->inCompleteWithFrags = secfp_inCompleteWithFrags;
@@ -3573,6 +3696,9 @@ unsigned int secfp_DeleteInSA(unsigned int ulVSGId,
 	}
 	memset(&pSA->PolicyPPStats, 0x0, sizeof(pSA->PolicyPPStats));
 	secfp_deleteInSAFromSPIList(pSA);
+#ifdef ASF_FP_LINUX_CRYPTO
+	asf_fp_linux_deleteInSAVIpsec(pSA);
+#endif
 	if (!bVal)
 		local_bh_enable();
 	return SECFP_SUCCESS;
@@ -3876,6 +4002,9 @@ ASF_uint32_t asfFlushInSA(SPDInContainer_t *pInContainer,
 			pInSA->ulSPDSelSetIndex, secfp_freeInSelSet);
 	}
 	secfp_deleteInSAFromSPIList(pInSA);
+#ifdef ASF_FP_LINUX_CRYPTO
+	asf_fp_linux_deleteInSAVIpsec(pInSA);
+#endif
 	return SECFP_SUCCESS;
 }
 

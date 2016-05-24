@@ -81,7 +81,7 @@ extern ASF_uint32_t asf_fwd_max_vsgs;
 
 extern ASFFwdGlobalStats_t *fwd_gstats;
 extern ASFFwdVsgStats_t *fwd_vsg_stats;
-extern fwd_hash_buckets; 
+extern int fwd_hash_buckets; 
 extern fwd4_bucket_t *fwd_flow_cache;
 
 extern int fwd_debug_show_index;

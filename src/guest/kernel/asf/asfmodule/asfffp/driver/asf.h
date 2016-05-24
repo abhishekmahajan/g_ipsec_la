@@ -14,7 +14,7 @@
 #include <linux/in6.h>
 #ifdef CONFIG_DPA
 #include "crc64.h"
-#include <fm_ext.h>
+#include "fm_ext.h"
 #include "dpa/dpaa_eth.h"
 #endif
 

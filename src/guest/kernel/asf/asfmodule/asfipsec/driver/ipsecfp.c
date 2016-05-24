@@ -42,7 +42,13 @@
 #include "ipsfpapi.h"
 #include "ipsecfp.h"
 #include "ipseccmn.h"
+#ifdef CONFIG_VIRTIO
+#ifdef ASF_FP_LINUX_CRYPTO
+#include "ipsec_linux_crypto.h"
+#else
 #include "ipsecvio.h"
+#endif
+#endif
 
 /* Data Structure initialization */
 /* Inbound SA SPI Table */
@@ -1593,7 +1599,7 @@ static inline int secfp_try_fastPathOutv4(
 #ifndef ASF_SECFP_PROTO_OFFLOAD
 	ip_decrease_ttl(iph);
 	if (pSA->SAParams.ucCipherAlgo != SECFP_ESP_NULL) {
-		usPadLen = (iph->tot_len + SECFP_ESP_TRAILER_LEN)
+		usPadLen = (ntohs(iph->tot_len) + SECFP_ESP_TRAILER_LEN)
 				& (pSA->SAParams.ulBlockSize - 1);
 		usPadLen = (usPadLen == 0) ? 0 :
 			pSA->SAParams.ulBlockSize - usPadLen;
@@ -1655,7 +1661,7 @@ static inline int secfp_try_fastPathOutv4(
 		if (unlikely(skb->len > pSA->ulInnerPathMTU)) {
 			ASFIPSEC_DEBUG("Total Leng is > ulPathMTU "
 					"tot_len = %d, ulPathMTU = %d",
-					iph->tot_len, pSA->ulInnerPathMTU);
+					ntohs(iph->tot_len), pSA->ulInnerPathMTU);
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM)
 			ASFIPSEC_DEBUG("Fragmentation activated");
 			if (pSA->SAParams.bRedSideFragment) {
@@ -1769,7 +1775,7 @@ static inline int secfp_try_fastPathOutv4(
 			"skb= 0x%x, skb->data= 0x%x, skb->dev= 0x%x\n",
 			(int)skb, (int)skb->data, (int)skb->dev);
 //#ifndef ASF_QMAN_IPSEC
-#if !defined(ASF_QMAN_IPSEC) || !defined(CONFIG_VIRTIO)
+#if !defined(ASF_QMAN_IPSEC) && !defined(CONFIG_VIRTIO)
 		/* Keeping REF_INDEX as 2, one for the h/w
 		and one for the core */
 		skb->cb[SECFP_REF_INDEX] = 2;
@@ -1792,7 +1798,7 @@ static inline int secfp_try_fastPathOutv4(
 
 		ASFIPSEC_FPRINT("Pkt Pre Processing len=%d", skb->len);
 		ASFIPSEC_HEXDUMP(skb->data, skb->len);
-#if 0
+
 		(*pSA->finishOutPktFnPtr)(skb, pSA, pContainer,
 				pOuterIpHdr, ulVSGId,
 			pSecInfo->outContainerInfo.ulSPDContainerId);
@@ -1800,12 +1806,12 @@ static inline int secfp_try_fastPathOutv4(
 		ASFIPSEC_FPRINT("Pkt Post Processing %d", skb->len);
 		ASFIPSEC_HEXDUMP(skb->data, skb->len);
 
-		if (skb->cb[SECFP_ACTION_INDEX] == SECFP_DROP) {
+		if (unlikely(skb->cb[SECFP_ACTION_INDEX] == SECFP_DROP)) {
 			ASFIPSEC_DPERR("Packet Action is Drop");
 			skb->data_len = 0;
 			goto drop_skb_list;
 		}
-#endif
+
 		ASFIPSEC_DEBUG("OUT-submit to SEC");
 		pIPSecPPGlobalStats->ulTotOutRecvPktsSecApply++;
 //#ifndef CONFIG_ASF_SEC4x
@@ -1816,7 +1822,11 @@ static inline int secfp_try_fastPathOutv4(
 #elif defined(ASF_QMAN_IPSEC)
 		if (secfp_qman_out_submit(pSA, (void *) skb))
 #elif defined(CONFIG_VIRTIO)
+#ifdef ASF_FP_LINUX_CRYPTO
+		if (unlikely(asf_fp_linux_encap(pSA, skb, pSA->outComplete, (void *)skb)))
+#else
 		if (secfp_vio_encap(pSA, skb, pSA->outComplete, (void *)skb))
+#endif
 #else
 		if (caam_jr_enqueue(pSA->ctx.jrdev,
 			((struct aead_edesc *)desc)->hw_desc,
@@ -1919,7 +1929,7 @@ no_sa:
 		rcu_read_unlock();
 		/* TBD - No need for this check, once the frag_list of asf is same as linux frag_list*/
 		if (skb_shinfo(skb1)->frag_list) {
-			if (asfReasmLinearize(&skb1, iph->tot_len,
+			if (asfReasmLinearize(&skb1, ntohs(iph->tot_len),
 				VPN_TOT_OVHD, VPN_HDROOM)) {
 				ASFIPSEC_DEBUG("asflLinearize failed");
 				ASFSkbFree(skb1);
@@ -1966,7 +1976,12 @@ inline int secfp_try_fastPathOut(unsigned int ulVSGId,
 		return secfp_try_fastPathOutv6(ulVSGId, skb, pSecInfo);
 	else
 #endif
+#ifdef ASF_FP_LINUX_CRYPTO
+		secfp_try_fastPathOutv4(ulVSGId, skb, pSecInfo);
+		return 0;
+#else
 		return secfp_try_fastPathOutv4(ulVSGId, skb, pSecInfo);
+#endif
 }
 
 static inline void secfp_unmap_descs(struct sk_buff *skb)
@@ -2039,6 +2054,7 @@ void secfp_outComplete(struct device *dev, u32 *pdesc,
 	SECFP_DESC_FREE(desc);
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM) && !defined(CONFIG_ASF_SEC4x)
 	skb->cb[SECFP_REF_INDEX]--;
+#ifndef ASF_FP_LINUX_CRYPTO
 	if (skb->cb[SECFP_REF_INDEX]) {
 		ASF_IPSEC_PPS_ATOMIC_INC(IPSec4GblPPStats_g.IPSec4GblPPStat[ASF_IPSEC_PP_GBL_CNT13]);
 		/* Waiting for another iteration to complete */
@@ -2046,6 +2062,7 @@ void secfp_outComplete(struct device *dev, u32 *pdesc,
 			skb->cb[SECFP_ACTION_INDEX] = SECFP_DROP;
 		return;
 	}
+#endif
 #endif /*(ASF_FEATURE_OPTION > ASF_MINIMUM)*/
 	SECFP_UNMAP_SINGLE_DESC(pdev, (dma_addr_t)(*(unsigned int *)
 			&(skb->cb[SECFP_SKB_DATA_DMA_INDEX])),
@@ -2108,6 +2125,10 @@ void secfp_outComplete(struct device *dev, u32 *pdesc,
 		skb_set_tail_pointer(skb, skb->len);
 #endif
 	}
+//todo
+#ifdef ASF_FP_LINUX_CRYPTO
+	skb->cb[SECFP_OUTB_FRAG_REQD] = 0;
+#endif
 
 	if (!skb->cb[SECFP_OUTB_FRAG_REQD]) {
 #ifdef ASF_SECFP_PROTO_OFFLOAD
@@ -2125,7 +2146,7 @@ void secfp_outComplete(struct device *dev, u32 *pdesc,
 				tot_len = ipv6h->payload_len + SECFP_IPV6_HDR_LEN;
 			} else
 #endif
-				tot_len = iph->tot_len;
+				tot_len = htons(iph->tot_len);
 			/* PPPoE packet:
 			Set Payload length in PPPoE header */
 			*((short *)&(skb->data[skb->cb[SECFP_OUTB_L2_OVERHEAD]-4]))
@@ -2164,6 +2185,8 @@ void secfp_outComplete(struct device *dev, u32 *pdesc,
 #else
 		txq = netdev_get_tx_queue(skb->dev, skb->queue_mapping);
 		netdev = skb->dev;
+//To clear ip_summed before sending to HW to avoid corruption by HW
+		skb->ip_summed = 0;
 		if (asfDevHardXmit(skb->dev, skb) != 0) {
 #ifndef ASF_QMAN_IPSEC
 			/*TODO: DPAA driver always consumes skb */
@@ -2227,6 +2250,10 @@ void secfp_outComplete(struct device *dev, u32 *pdesc,
 						return;
 					}
 				}
+#endif
+#ifdef ASF_FP_LINUX_CRYPTO
+//Workaround - need to fix ..
+return;
 #endif
 				for (; pOutSkb != NULL; pOutSkb = pTempSkb) {
 					pTempSkb = pOutSkb->next;
@@ -2549,7 +2576,7 @@ static inline int secfp_inCompleteCheckAndTrimPkt(
 		ulStripLen = *pTotLen - (ipv6h->payload_len + SECFP_IPV6_HDR_LEN);
 	} else
 #endif
-		ulStripLen = *pTotLen - inneriph->tot_len;
+		ulStripLen = *pTotLen - ntohs(inneriph->tot_len);
 #endif /*ASF_SECFP_PROTO_OFFLOAD*/
 
 	ASFIPSEC_FPRINT("pHeadSkb->data = 0x%x,"
@@ -2622,7 +2649,7 @@ static inline int secfp_inCompleteCheckAndTrimPkt(
 			+ SECFP_IPV6_HDR_LEN - pHeadSkb->cb[SECFP_ICV_LENGTH] - 1);
 	} else
 #endif
-		*pNextProto = *((u8 *)iph + iph->tot_len
+		*pNextProto = *((u8 *)iph + ntohs(iph->tot_len)
 				- pHeadSkb->cb[SECFP_ICV_LENGTH] - 1);
 #else
 		*pNextProto = pTailSkb->data[pTailSkb->len - 1];
@@ -2644,7 +2671,7 @@ static inline int secfp_inCompleteCheckAndTrimPkt(
 			pSA->ulPkts[smp_processor_id()]--;
 		}
 		rcu_read_unlock();
-		ASFIPSEC_PRINT(KERN_INFO "Decrypted Protocol != IPV4 or IPV6");
+		ASFIPSEC_PRINT("\nDecrypted Protocol != IPV4 or IPV6");
 		return 1;
 	}
 #ifndef ASF_SECFP_PROTO_OFFLOAD
@@ -2747,8 +2774,11 @@ int secfp_inCompleteSAProcess(struct sk_buff **pSkb,
 		*(unsigned int *)&(pHeadSkb->cb[SECFP_HASH_VALUE_INDEX]));
 
 	rcu_read_lock();
-
+#ifdef ASF_FP_LINUX_CRYPTO
+	pSA = secfp_findInSA(pHeadSkb->cb[SECFP_VSG_ID_INDEX],
+#else
 	pSA = secfp_findInSA(*(unsigned int *)&(pHeadSkb->cb[SECFP_VSG_ID_INDEX]),
+#endif
 			ucProto,
 			*(unsigned int *)&(pHeadSkb->cb[SECFP_SPI_INDEX]),
 			pIPSecOpaque->DestAddr,
@@ -2978,6 +3008,9 @@ void secfp_inCompleteUpdateIpv4Pkt(struct sk_buff *pHeadSkb)
 		csum_replace4(&iph->check, iph->tos, tos);
 		iph->tos = tos;
 	}
+#ifdef ASF_FP_LINUX_CRYPTO
+        *(uintptr_t *)&(pHeadSkb->cb[SECFP_IPHDR_INDEX]) = (pHeadSkb->data);
+#endif
 }
 //#ifndef CONFIG_ASF_SEC4x
 #if !defined(CONFIG_ASF_SEC4x) && !defined(CONFIG_VIRTIO)
@@ -3357,6 +3390,7 @@ void secfp_inComplete(struct device *dev, u32 *pdesc,
 #if defined(CONFIG_VIRTIO)
 	int *desc;
 #endif
+	int encapMode;
 	ASFIPSEC_FENTRY;
 
 #ifdef ASF_IPV6_FP_SUPPORT
@@ -3395,7 +3429,7 @@ void secfp_inComplete(struct device *dev, u32 *pdesc,
 #endif
 			SECFP_DESC_FREE(desc);
 		rcu_read_lock();
-		pSA = secfp_findInSA(*(unsigned int *)&(skb->cb[SECFP_VSG_ID_INDEX]),
+		pSA = secfp_findInSA(ASF_DEF_VSG,//*(unsigned int *)&(skb->cb[SECFP_VSG_ID_INDEX]),
 					SECFP_PROTO_ESP,
 					*(unsigned int *)&(skb->cb[SECFP_SPI_INDEX]),
 					IPSecOpque.DestAddr,
@@ -3437,8 +3471,21 @@ void secfp_inComplete(struct device *dev, u32 *pdesc,
 		ipv6h2->hop_limit--;
 	} else
 #endif
+	if(pSA == NULL)
 	{
-		skb->len = inneriph->tot_len;
+	rcu_read_lock();
+	pSA = secfp_findInSA(ASF_DEF_VSG,//*(unsigned int *)&(skb->cb[SECFP_VSG_ID_INDEX]),
+				SECFP_PROTO_ESP,
+				*(unsigned int *)&(skb->cb[SECFP_SPI_INDEX]),
+				IPSecOpque.DestAddr,
+				(unsigned int *)&(skb->cb[SECFP_HASH_VALUE_INDEX]));
+	rcu_read_unlock();
+	}
+	encapMode = (pSA->SAParams.bEncapsulationMode & ASF_IPSEC_SA_SAFLAGS_TRANSPORTMODE) ?
+			ASF_IPSEC_SA_SAFLAGS_TRANSPORTMODE : ASF_IPSEC_SA_SAFLAGS_TUNNELMODE;
+	if(encapMode == ASF_IPSEC_SA_SAFLAGS_TUNNELMODE)
+	{
+		skb->len = ntohs(inneriph->tot_len);
 		ip_decrease_ttl(inneriph);
 	}
 #else /*NO ASF_SECFP_PROTO_OFFLOAD*/
@@ -3530,11 +3577,18 @@ void secfp_inComplete(struct device *dev, u32 *pdesc,
 
 	/* Look at the Next protocol field */
 	ulTempLen = ulBeforeTrimLen = skb_headlen(skb);
+	if(encapMode == ASF_IPSEC_SA_SAFLAGS_TUNNELMODE)
+	{
 	if (secfp_inCompleteCheckAndTrimPkt(skb, skb, &ulTempLen,
 			&ucNextProto, &IPSecOpque.DestAddr)) {
 		ASFIPSEC_WARN("secfp_incompleteCheckAndTrimPkt failed");
 		ASFSkbFree(skb);
 		return;
+		}
+	}
+	else//ASF_IPSEC_SA_SAFLAGS_TRANSPORTMODE
+	{
+		ucNextProto = SECFP_PROTO_IP;
 	}
 	iRetVal = secfp_inCompleteSAProcess(&skb, &IPSecOpque,
 		SECFP_PROTO_ESP, &ulCommonInterfaceId, ulBeforeTrimLen);
@@ -3553,7 +3607,7 @@ void secfp_inComplete(struct device *dev, u32 *pdesc,
 	/* Assuming ethernet as the receiving device of original packet */
 	if (ucNextProto == SECFP_PROTO_IP) {
 		secfp_inCompleteUpdateIpv4Pkt(skb);
-		skb->protocol = ETH_P_IP;
+		skb->protocol = ntohs(ETH_P_IP);
 
 		ASFIPSEC_FPRINT("decrypt skb %p len %d frag %p\n",
 			skb->head, skb->len,
@@ -3569,11 +3623,17 @@ void secfp_inComplete(struct device *dev, u32 *pdesc,
 			skb, &IPSecOpque, ASF_FALSE);
 		else
 #endif
+#ifdef ASF_FP_LINUX_CRYPTO
+			ASFFFPProcessAndSendPkt(
+			(skb->cb[SECFP_VSG_ID_INDEX]),
+			ulCommonInterfaceId, Buffer, secfp_SkbFree,
+			skb, &IPSecOpque);
+#else
 			ASFFFPProcessAndSendPkt(
 			*(unsigned int *)&(skb->cb[SECFP_VSG_ID_INDEX]),
 			ulCommonInterfaceId, Buffer, secfp_SkbFree,
 			skb, &IPSecOpque);
-
+#endif
 		pIPSecPPGlobalStats->ulTotInProcPkts++;
 #ifdef ASF_IPV6_FP_SUPPORT
 	} else if (ucNextProto == SECFP_PROTO_IPV6) {
@@ -3597,10 +3657,16 @@ void secfp_inComplete(struct device *dev, u32 *pdesc,
 		pIPSecPPGlobalStats->ulTotInProcPkts++;
 #endif
 	} else {
-		ASFIPSEC_WARN("Protocol not supported 0x%x", ucNextProto);
-		ASFSkbFree(skb);
+//todo
+//temp - commented for transport mode
+		ASFIPSEC_WARN("Protocol not supported might be transport 0x%x", ucNextProto);
+	/*	ASFIPSEC_WARN("Protocol not supported 0x%x", ucNextProto);
+		ASFSkbFree(skb);*/
 		return;
 	}
+#ifdef ASF_FP_LINUX_CRYPTO
+return ;
+#endif
 }
 /*
  * This function finds out the Extended sequence number to be appended to the
@@ -4656,7 +4722,7 @@ static inline int secfp_try_fastPathInv4(struct sk_buff *skb1,
 	ASF_IPAddr_t saDestAddr;
 	SPDInContainer_t *pContainer;
 
-	if (ulVSGId == ulMaxVSGs_g) {
+	if (unlikely(ulVSGId == ulMaxVSGs_g)) {
 		ASFIPSEC_DEBUG("send packet up for VSG determination");
 		ASFIPSEC_DEBUG("Need to call registered callback function ");
 		return 1; /* Send it up to Stack */
@@ -4666,9 +4732,9 @@ static inline int secfp_try_fastPathInv4(struct sk_buff *skb1,
 		iRetVal = secfp_process_udp_encapsulator(&skb1, ulVSGId,
 			aSkipHeader, &ucSkipLen);
 
-		if (iRetVal == ASF_NON_NATT_PACKET)
+		if (unlikely(iRetVal == ASF_NON_NATT_PACKET))
 			return 1; /* Send it up to Stack */
-		else if (iRetVal == ASF_IPSEC_CONSUMED)
+		else if (unlikely(iRetVal == ASF_IPSEC_CONSUMED))
 			return 0;
 		iph = ip_hdr(skb1);
 	}
@@ -4679,7 +4745,7 @@ static inline int secfp_try_fastPathInv4(struct sk_buff *skb1,
 		skb_reset_network_header(skb1);
 		ASFCB(skb1)->Defrag.bIPv6 = 0;
 		skb1 = asfIpv4Defrag(ulVSGId, skb1, NULL, NULL, NULL, &fragCnt);
-		if (skb1 == NULL) {
+		if (unlikely(skb1 == NULL)) {
 			ASFIPSEC_DEBUG("ESP Packet absorbed by IP reasembly module");
 			return 0; /*Pkt absorbed */
 		}
@@ -4734,11 +4800,11 @@ static inline int secfp_try_fastPathInv4(struct sk_buff *skb1,
 		}
 		/* SA Found */
 		/* Need to have this check when packets are coming in from upper layer, but not from the driver interface */
-		if (skb_shinfo(skb1)->frag_list ||
-			skb_shinfo(skb1)->nr_frags) {
+		if (likely(skb_shinfo(skb1)->frag_list ||
+			skb_shinfo(skb1)->nr_frags)) {
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM)
 			pHeadSkb = skb1;
-			if (skb_shinfo(skb1)->frag_list)
+			if(likely (skb_shinfo(skb1)->frag_list))
 				for (pTailPrevSkb = skb1,
 					pTailSkb = skb_shinfo(skb1)->frag_list;
 					pTailSkb->next != NULL;
@@ -4774,7 +4840,7 @@ So all these special boundary cases need to be handled for nr_frags*/
 			ASF_IPSEC_INC_POL_PPSTATS_CNT(pSA, ASF_IPSEC_PP_POL_CNT9);
 		}
 
-		if (iph->tot_len < pSA->validIpPktLen) {
+		if (unlikely(iph->tot_len < pSA->validIpPktLen)) {
 			ASFIPSEC_DEBUG("Invalid ESP or AH Pkt");
 			snprintf(aMsg, ASF_MAX_MESG_LEN - 1,
 				"SPI = 0x%x, Seq. No = %u"
@@ -4921,12 +4987,15 @@ So all these special boundary cases need to be handled for nr_frags*/
 			}
 #endif /*(ASF_FEATURE_OPTION > ASF_MINIMUM)*/
 #endif /*ASF_SECFP_PROTO_OFFLOAD*/
-		} else {
+		}
+//Abhishek - commented for AEAD algorithms support
+		/* else {
 			pHeadSkb->cb[SECFP_LOOKUP_SA_INDEX] = 0;
 			/* No need to do post SEC Lookup */
-			skb_set_tail_pointer(pTailSkb, skb_headlen(pTailSkb));
-			*(unsigned int *)skb_tail_pointer(pTailSkb) = 0;
-		}
+		/*	skb_set_tail_pointer(pTailSkb, skb_headlen(pTailSkb));
+//commented for stop corruption of nr_frags
+//			*(unsigned int *)skb_tail_pointer(pTailSkb) = 0;
+		}*/
 		/* byte offset to move past the tunnel header for ESP*/
 #ifndef ASF_QMAN_IPSEC
 #ifndef ASF_SECFP_PROTO_OFFLOAD
@@ -4934,7 +5003,7 @@ So all these special boundary cases need to be handled for nr_frags*/
 #else
 			ulSecLen = pSA->ulSecHdrLen + SECFP_IPV4_HDR_LEN;
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM)
-			if (skb_shinfo(pHeadSkb)->frag_list)
+			if (likely(skb_shinfo(pHeadSkb)->frag_list))
 				if (ulSecLen % 8)
 					ulFragpadlen = (8 - (ulSecLen % 8));
 			ulSecLen+= ulFragpadlen;
@@ -4970,7 +5039,11 @@ So all these special boundary cases need to be handled for nr_frags*/
 		*(unsigned int *)&(pHeadSkb->cb[SECFP_VSG_ID_INDEX]) = ulVSGId;
 		*(unsigned int *)&(pHeadSkb->cb[SECFP_SPI_INDEX]) = pSA->SAParams.ulSPI;
 		/* Pass the skb data pointer */
+#ifdef ASF_FP_LINUX_CRYPTO
+		*(uintptr_t *)&(pHeadSkb->cb[SECFP_IPHDR_INDEX]) = (pHeadSkb->data);
+#else
 		*(uintptr_t *)&(pHeadSkb->cb[SECFP_IPHDR_INDEX]) = (uintptr_t)(&(pHeadSkb->data[0]));
+#endif
 		*(unsigned int *)&(pHeadSkb->cb[SECFP_HASH_VALUE_INDEX]) = ulHashVal;
 
 		ASFIPSEC_DBGL2("In Packet ulSPI=%d, ipaddr_ptr=0x%x,"
@@ -5058,7 +5131,7 @@ So all these special boundary cases need to be handled for nr_frags*/
 #endif /*ASF_QMAN_IPSEC*/
 
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM)
-		if (ASFIPSecCbFn.pFnSAExpired) {
+		if (unlikely(ASFIPSecCbFn.pFnSAExpired)) {
 			int cpu;
 			if (pSA->SAParams.hardKbyteLimit) {
 				unsigned long ulKBytes = len;
@@ -5129,10 +5202,17 @@ sa_expired:
 		if (secfp_qman_in_submit(pSA, pHeadSkb))
 
 #elif defined(CONFIG_VIRTIO)
+#ifdef ASF_FP_LINUX_CRYPTO
+        if (unlikely(asf_fp_linux_decap(pSA,pHeadSkb,
+				(secin_sg_flag & SECFP_SCATTER_GATHER) ?
+				pSA->inCompleteWithFrags : pSA->inComplete,
+				(void *)pHeadSkb)))
+#else
 		if (secfp_vio_decap(pSA,pHeadSkb, 
 						(secin_sg_flag & SECFP_SCATTER_GATHER) ?
 					pSA->inCompleteWithFrags : pSA->inComplete,
 					(void *)pHeadSkb))
+#endif
 #else
 		if (caam_jr_enqueue(pSA->ctx.jrdev,
 			((struct aead_edesc *)desc)->hw_desc,
@@ -5194,10 +5274,17 @@ sa_expired:
 				? pSA->inCompleteWithFrags : pSA->inComplete,
 				(void *)pHeadSkb) == -EAGAIN)
 #else
+#ifdef ASF_FP_LINUX_CRYPTO
+            if (unlikely(asf_fp_linux_decap(pSA,pHeadSkb,
+                                    (secin_sg_flag & SECFP_SCATTER_GATHER) ?
+                            pSA->inCompleteWithFrags : pSA->inComplete,
+                            (void *)pHeadSkb)))
+#else
 			if (secfp_vio_decap(pSA,pHeadSkb, 
 						(secin_sg_flag & SECFP_SCATTER_GATHER) ?
 					pSA->inCompleteWithFrags : pSA->inComplete,
-					(void *)pHeadSkb)
+					(void *)pHeadSkb))
+#endif
 #endif
 				{
 				ASFIPSEC_WARN("Inbound Submission to SEC failed");

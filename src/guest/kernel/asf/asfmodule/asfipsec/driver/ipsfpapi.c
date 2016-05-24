@@ -34,7 +34,13 @@
 #include "ipsfpapi.h"
 #include "ipsecfp.h"
 #include "ipseccmn.h"
+#ifdef CONFIG_VIRTIO
+#ifdef ASF_FP_LINUX_CRYPTO
+#include "ipsec_linux_crypto.h"
+#else
 #include "ipsecvio.h"
+#endif
+#endif
 
 int  ulMaxVSGs_g = ASF_MAX_VSGS;
 int  ulMaxTunnels_g = SECFP_MAX_NUM_TUNNEL_IFACES;
@@ -743,6 +749,9 @@ static unsigned int secfp_copySAParams(ASF_IPSecSA_t *pASFSAParams,
 
 	if (pASFSAParams->encDecKey) {
 		pSAParams->bEncrypt = ASF_TRUE;
+		//Added above to copy whole key including SALT 
+		memcpy(pSAParams->ucEncKey, pASFSAParams->encDecKey,
+					pASFSAParams->encDecKeyLenBits/8);
 		switch (pASFSAParams->encAlgo) {
 		case ASF_IPSEC_EALG_DESCBC:
 			pSAParams->ucCipherAlgo = SECFP_DES;
@@ -845,8 +854,6 @@ aes_gcm_copy:
 			return SECFP_FAILURE;
 		}
 		pSAParams->EncKeyLen = pASFSAParams->encDecKeyLenBits/8;
-		memcpy(pSAParams->ucEncKey, pASFSAParams->encDecKey,
-					pSAParams->EncKeyLen);
 	} else {
 		ASFIPSEC_WARN("no encr/auth algo; choosing ESP_NULL\n");
 		pSAParams->ucCipherAlgo = SECFP_ENC_NONE;
@@ -1481,7 +1488,7 @@ static unsigned int asf_FillSAParams(ASF_IPSecSA_t *pASFSAParams,
 			       pSAParams->ucNounceIVCounter, 16);
 		}
 		pASFSAParams->encDecKeyLenBits = pSAParams->EncKeyLen/8;
-		memcpy(pASFSAParams->encDecKey, pSAParams->ucEncKey, pASFSAParams->encDecKeyLenBits);
+		memcpy(pASFSAParams->encDecKey, pSAParams->ucEncKey, pASFSAParams->encDecKeyLenBits/8);
 	} else {
 		pASFSAParams->encAlgo = ASF_IPSEC_EALG_NULL;
 	}
@@ -2181,13 +2188,22 @@ static int __init ASFIPSec_Init(void)
 	//if (secfp_register_proc()) - review
 	//	ASFIPSEC_WARN("Unable to register IPSEC proc");
 
+#ifdef CONFIG_VIRTIO 
+#ifdef ASF_FP_LINUX_CRYPTO
+	asf_fp_linux_init();
+#else
 	asf_virtio_interface_init();
+#endif
+#endif
 	ASFIPSEC_DEBUG("Exit");
 	return 0;
 
 }
 static void __exit ASFIPSec_Exit(void)
 {
+#ifdef ASF_FP_LINUX_CRYPTO
+	asf_fp_linux_deinit();
+#endif
 	secfp_unregister_proc();
 	secfp_deInit();
 }

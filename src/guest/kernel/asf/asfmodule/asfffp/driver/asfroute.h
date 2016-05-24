@@ -213,7 +213,7 @@ static inline u32 asf_fnhe_hashfun(__be32 daddr)
 
 static inline bool rt_is_expired(const struct rtable *rth)
 {
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 0, 0)
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
 	return rth->rt_genid != rt_genid(dev_net(rth->dst.dev));
 #else
 	return rth->rt_genid != rt_genid_ipv4(dev_net(rth->dst.dev));
@@ -307,7 +307,7 @@ static inline int asf_route_resolve(ASFNetDevEntry_t *inputDev,
 				asf_debug("asf_route_resolve: 6\n");
 
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 0, 0)
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
 				ipv4->rth->rt_genid = rt_genid(dev_net(ipv4->rth->dst.dev));
 #else
 				ipv4->rth->rt_genid = rt_genid_ipv4(dev_net(ipv4->rth->dst.dev));

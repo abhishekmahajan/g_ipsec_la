@@ -70,7 +70,7 @@ void dbg_prt_blk(char *str, void *key, int keylen);
 #define ASF_IPLEN	20
 #define ASF_ICMPLEN	8
 #define ASF_IP_MAXOPT	40
-
+#define ASF_DEF_VSG     0
 /* DF related bits */
 #define SECFP_DF_COPY	0
 #define SECFP_DF_CLEAR	1
@@ -1056,6 +1056,7 @@ extern int secfp_qman_out_submit(outSA_t *pSA, void *context);
 extern void secfp_qman_release_fq(struct caam_ctx *ctx, int dir);
 
 #else
+#if defined(CONFIG_VIRTIO) && !defined(ASF_FP_LINUX_CRYPTO)
 extern	void secfp_prepareOutDescriptor(
 		struct sk_buff *skb,
 		void *pSA, void *, unsigned int);
@@ -1064,6 +1065,7 @@ extern	void secfp_prepareInDescriptor(
 		struct sk_buff *skb,
 		void *pSA, void *, unsigned int);
 
+#endif
 
 #if !defined(CONFIG_ASF_SEC4x) && !defined(CONFIG_VIRTIO)
 extern void secfp_prepareInDescriptorWithFrags(

@@ -106,12 +106,12 @@ fwd_cache_t *fwd_cache;
 static __u32 rule_salt __read_mostly;
 
 extern struct dst_ops asf_ipv4_dst_blackhole_ops;
-int fwd_register_proc();
-int asf_unregister_proc();
-
+int fwd_register_proc(void);
+int asf_unregister_proc(void);
+#ifdef ASF_IPV6_FP_SUPPORT
 extern int asf_fwd6_init(void);
 extern int asf_fwd6_deinit(void);
-
+#endif
 static inline fwd_flow4_t *fwd_flow4_alloc(void)
 {
     char bHeap;
@@ -175,7 +175,7 @@ static inline unsigned long _fwd_cmpute_hash(
 
 static inline fwd4_bucket_t *_fwd_bucket_by_hash(unsigned int ulHashVal)
 {
-	printk("FWD_HINDEX(h) = %d\n", FWD_HINDEX(ulHashVal));
+	printk("FWD_HINDEX(h) = %x\n", FWD_HINDEX(ulHashVal));
 	return &fwd_flow_cache[FWD_HINDEX(ulHashVal)];
 }
 
@@ -357,9 +357,13 @@ static void _fwd_flow_move_in_cache(fwd_flow4_t *flow)
 }
 
 
-static inline void _fwd_flow_delete_lru()
+static inline void _fwd_flow_delete_lru(void)
 {
+#ifdef ASF_IPV6_FP_SUPPORT
     fwd6_cache_t *per_cpu_fwd_cache = 
+	(fwd_cache_t *)asfPerCpuPtr(fwd_cache, smp_processor_id());
+#endif
+    fwd_cache_t *per_cpu_fwd_cache =  
 	(fwd_cache_t *)asfPerCpuPtr(fwd_cache, smp_processor_id());
     fwd_flow4_t *flow;
 
@@ -533,7 +537,7 @@ ASF_void_t ASFFWD_Process(
 
 #ifdef ASF_DEBUG_FRAME
     asf_print(" Pkt skb->len = %d, iph->tot_len = %d",
-		 skb->len, iph->tot_len);
+		 skb->len, ntohs(iph->tot_len));
     hexdump(skb->data - 14, skb->len + 14);
 #endif
     printk("Proces 1\n");
@@ -879,7 +883,7 @@ unsigned int asfFwd4InacTmrCb(unsigned int ulVSGId,
 #define ASF_FWD4_INAC_TIMER_BUCKT 2048    /* Max inactity timer value  */
 #define ASF_FWD4_NUM_RQ_ENTRIES  (256)
 
-static int asf_fwd_init_flow4_table()
+static int asf_fwd_init_flow4_table(void)
 {
     unsigned int max_num;
     int i;
@@ -1013,7 +1017,7 @@ static void asf_fwd_destroy_all_flow4s(void)
 	}
 }
 
-static void asf_fwd_destroy_flow4_table()
+static void asf_fwd_destroy_flow4_table(void)
 {
 	/*asf_fwd_cleanup_all_flows(); */
 	asfTimerWheelDeInit(ASF_FWD4_INAC_TMR_ID, 0);
@@ -1033,7 +1037,7 @@ static void asf_fwd_destroy_flow4_table()
 	ptrIArray_cleanup(&fwd4_ptrArray);
 }
 
-static void asf_fwd_destroy_cache4()
+static void asf_fwd_destroy_cache4(void)
 { 
     kfree(fwd_cache);
 }
@@ -1169,16 +1173,22 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 static int __init ASFFwd_Init(void)
 {
-	asf_fwd_init();
+	//Commented for running with single core
+	//asf_fwd_init();
+#ifdef ASF_IPV6_FP_SUPPORT
 	asf_fwd6_init();
+#endif
 	return 0;
 }
 
 
 static void __exit ASFFwd_Exit(void)
 {
-	asf_fwd_deinit();
+	//Commented for running with single core
+	//asf_fwd_deinit();
+#ifdef ASF_IPV6_FP_SUPPORT
 	asf_fwd6_deinit();
+#endif
 }
 
 module_init(ASFFwd_Init);

@@ -12,6 +12,7 @@
 #define _FWD_PVT_H
 
 
+#ifdef ASF_IPV6_FP_SUPPORT
 typedef struct ASFFwdFlow6Stats_s {
 	/* Number of Received Packets */
 	ASF_uint32_t    ulInPkts;
@@ -32,6 +33,7 @@ typedef struct ASFFwdVsg6Stats_s {
 	ASF_uint32_t	ulOutPkts;
 	ASF_uint32_t	ulOutBytes;
 } ASFFwdVsg6Stats_t;
+#endif
 
 typedef struct ASFFwdFlowStats_s {
 	/* Number of Received Packets */
@@ -134,7 +136,7 @@ typedef struct fwd4_bucket_s {
 #endif
 }fwd4_bucket_t;
 
-
+#ifdef ASF_IPV6_FP_SUPPORT
 typedef struct fwd6_bucket_s {
     fwd_flow6_t *pPrev;
     fwd_flow6_t *pNext;
@@ -144,7 +146,7 @@ typedef struct fwd6_bucket_s {
 #endif	
 
 }fwd6_bucket_t;
-
+#endif
 
 
 
@@ -154,11 +156,13 @@ typedef struct fwd_cache_list_s{
 	fwd_flow4_t *pTail;
 }fwd_cache_t;
 
+#ifdef ASF_IPV6_FP_SUPPORT
 typedef struct fwd_cache6_list_s{
 	int	count;
 	fwd_flow6_t *pHead;
 	fwd_flow6_t *pTail;
 }fwd6_cache_t;
+#endif
 
 #endif
 

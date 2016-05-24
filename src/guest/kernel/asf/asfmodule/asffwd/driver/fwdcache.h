@@ -71,6 +71,7 @@ static inline int asf_fwd_route_resolve(
     return ret;
 }
 
+#ifdef ASF_IPV6_FP_SUPPORT
 static inline int asf_fwd_route6_resolve(ASFNetDevEntry_t *inputDev, fwd_flow6_t *flow, ASFBuffer_t *abuf)
 {
 	int ret;
@@ -90,5 +91,5 @@ static inline int asf_fwd_arp6_resolve(fwd_flow6_t *flow, ASFBuffer_t *abuf)
 	}
 	return ret;
 }
-
+#endif
 #endif

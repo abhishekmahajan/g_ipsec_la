@@ -1598,17 +1598,17 @@ non_tudp:
 	 */
 
 	/* IpSecIn for ESP pkts */
-	if (unlikely((iph->protocol == IPPROTO_ESP) ||
-			(iph->protocol == IPPROTO_AH))) {
+	if ((iph->protocol == IPPROTO_ESP) ||
+			(iph->protocol == IPPROTO_AH)) {
 		XGSTATS_INC(ESPPkts);
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM)
 ipsecin:
 #endif
-		if (pFFPIPSecIn) {
+		if (likely(pFFPIPSecIn)) {
 			abuf.bbuffInDomain = ASF_TRUE;
 			asf_abuf_to_skb(&abuf);
-			if (pFFPIPSecIn(abuf.nativeBuffer, 0, anDev->ulVSGId,
-				anDev->ulCommonInterfaceId) == 0) {
+			if (likely(pFFPIPSecIn(abuf.nativeBuffer, 0, anDev->ulVSGId,
+				anDev->ulCommonInterfaceId) == 0)) {
 				ASF_RCU_READ_UNLOCK(bLockFlag);
 				return AS_FP_STOLEN;
 			} else {
@@ -1806,7 +1806,7 @@ EXPORT_SYMBOL(asf_ffp_devfp_rx_veth);
 
 int asf_ffp_devfp_rx(struct sk_buff *skb, struct net_device *real_dev)
 {
-	if (0 == asf_enable)
+	if (unlikely(0 == asf_enable))
 		return AS_FP_PROCEED;
 #ifndef CONFIG_DPA
 	/*skb->protocol = eth_type_trans(skb, real_dev);*/
@@ -1836,7 +1836,7 @@ int asf_ffp_devfp_rx_int(struct sk_buff *skb, struct net_device *real_dev)
 #if 1
 	__sum16	udp_csum_val, csum;
 #endif
-	if (0 == asf_enable)
+	if (unlikely(0 == asf_enable))
 		return AS_FP_PROCEED;
 	//printk("devfp_rx called\n");
 
@@ -1852,7 +1852,7 @@ int asf_ffp_devfp_rx_int(struct sk_buff *skb, struct net_device *real_dev)
 	usEthType = skb->protocol; /* *(short *)(skb->data + 12); */
 	x_hh_len = 0;
 
-	if (skb->pkt_type != PACKET_HOST) {
+	if (unlikely(skb->pkt_type != PACKET_HOST)) {
 		/* multicast or broadcast or a packet
 			received in promiscous mode */
 		/* asf_debug_l2*/ printk("packet type (%d) is not PACKET_HOST"\
@@ -1864,13 +1864,13 @@ int asf_ffp_devfp_rx_int(struct sk_buff *skb, struct net_device *real_dev)
 	}
 
 	anDev = ASFNetDev(real_dev);
-	if (NULL == anDev)
+	if (unlikely(NULL == anDev))
 		goto iface_not_found;
 	abuf.nativeBuffer = skb;
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM)
 	if (real_dev != skb->dev)
 		anDev = ASFGetVlanDev(anDev, skb->vlan_tci & VLAN_VID_MASK);
-	if (NULL == anDev)
+	if (unlikely(NULL == anDev))
 		goto iface_not_found;
 	if (unlikely(anDev->ulVSGId == ASF_INVALID_VSG) ||
 		unlikely(anDev->ulZoneId == ASF_INVALID_ZONE)) {
@@ -2106,7 +2106,7 @@ int asf_ffp_devfp_rx_int(struct sk_buff *skb, struct net_device *real_dev)
 		}
 	}
 
-	if (ip_fast_csum((u8 *)iph, iph->ihl)) {
+	if (unlikely(ip_fast_csum((u8 *)iph, iph->ihl))) {
 		gstats->ulErrCsum++;
 		XGSTATS_INC(LocalBadCsum);
 		asf_debug("Ip Checksum verification failed \r\n");
@@ -2136,9 +2136,9 @@ int asf_ffp_devfp_rx_int(struct sk_buff *skb, struct net_device *real_dev)
 	*/
 
 	if ((iph->protocol == IPPROTO_ESP) || (iph->protocol == IPPROTO_AH)) {
-		if (pFFPIPSecIn) {
-			if (pFFPIPSecIn(skb, 0, anDev->ulVSGId,
-				anDev->ulCommonInterfaceId) == 0) {
+		if (likely(pFFPIPSecIn)) {
+			if (likely((pFFPIPSecIn(skb, 0, anDev->ulVSGId,
+				anDev->ulCommonInterfaceId) == 0))) {
 				ASF_RCU_READ_UNLOCK(bLockFlag);
 				return AS_FP_STOLEN;
 			}
@@ -3083,7 +3083,7 @@ ASF_void_t ASFFFPProcessAndSendPkt(
 
 #ifdef ASF_DEBUG_FRAME
 	asf_print(" Pkt (%x) skb->len = %d, iph->tot_len = %d",
-		pIpsecOpaque, skb->len, iph->tot_len);
+		pIpsecOpaque, skb->len, ntohs(iph->tot_len));
 	hexdump(skb->data - 14, skb->len + 14);
 #endif
 
@@ -3240,7 +3240,8 @@ ASF_void_t ASFFFPProcessAndSendPkt(
 
 		flow_stats = &flow->stats;
 #endif
-
+// -for testing
+		skb->ip_summed = 0; //test
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM)
 		vsgInfo = asf_ffp_get_vsg_info_node(ulVsgId);
 		if (vsgInfo) {

@@ -5,9 +5,10 @@ VIO_IPSEC_DIR=`pwd`/src/guest/kernel/ipsec
 
 all:
 	mkdir -p bin/min
+	make -C $(VIO_IPSEC_DIR) G_IPSEC_LA=$(VIO_IPSEC_DIR)
 	make -C $(ASF_DIR) min
 	mv $(ASF_DIR)/bin/min/* bin/min/
-	make -C $(VIO_IPSEC_DIR) G_IPSEC_LA=$(VIO_IPSEC_DIR)
+	#make -C $(VIO_IPSEC_DIR) G_IPSEC_LA=$(VIO_IPSEC_DIR)
 	mv $(VIO_IPSEC_DIR)/virtio_ipsec.ko bin/
 
 clean:

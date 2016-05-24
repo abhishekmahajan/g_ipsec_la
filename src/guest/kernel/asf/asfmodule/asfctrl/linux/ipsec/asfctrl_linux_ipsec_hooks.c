@@ -43,7 +43,18 @@
 #include "../ffp/asfctrl.h"
 #include "asfctrl_linux_ipsec_hooks.h"
 
+#ifdef ASF_FP_LINUX_CRYPTO
+#include <crypto/aead.h>
+#include <crypto/authenc.h>
+#include <crypto/internal/aead.h>
+#include <net/esp.h>
+#include <net/xfrm.h>
+#include <linux/crypto.h>
+#endif
 
+#ifdef ASF_FP_LINUX_CRYPTO
+#define ASFCTRL_FUNC_ENTRY
+#endif
 #define ASF_IPSEC_NEEDED_HEADROOM	128
 #define ASF_IPSEC_NEEDED_TAILROOM	128
 
@@ -342,10 +353,11 @@ int is_policy_offloadable(struct xfrm_policy *xp)
 		ASFCTRL_WARN("NULL IPSEC Template");
 		return -EINVAL;
 	}
-	if (unlikely(tmpl->mode != XFRM_MODE_TUNNEL)) {
+// To allow transport configurations
+/*	if (unlikely(tmpl->mode != XFRM_MODE_TUNNEL)) {
 		ASFCTRL_WARN("IPSEC Transport Mode not supported");
 		return -EINVAL;
-	}
+	}*/
 	if ((unlikely(tmpl->id.proto != IPPROTO_ESP) &&
 		(tmpl->id.proto != IPPROTO_AH))) {
 		ASFCTRL_WARN("Non ESP/AH protocol not supported");
@@ -624,6 +636,9 @@ int asfctrl_xfrm_add_outsa(struct xfrm_state *xfrm, struct xfrm_policy *xp)
 
 	SAParams.bDoAntiReplayCheck =
 		SAParams.bDoAntiReplayCheck ? bAntiReplayCheck : 0;
+//Abhishek -add ESN flag
+        SAParams.bUseExtendedSequenceNumber = (xfrm->props.flags & XFRM_STATE_ESN)?1:0;
+	ASFCTRL_INFO("SAParams.bUseExtendedSequenceNumber = %d ", SAParams.bUseExtendedSequenceNumber);
 
 	if (xfrm->props.replay_window < 32)
 		SAParams.replayWindowSize = 32;
@@ -657,8 +672,10 @@ int asfctrl_xfrm_add_outsa(struct xfrm_state *xfrm, struct xfrm_policy *xp)
 		SAParams.softPacketLimit = xfrm->lft.soft_packet_limit;
 		SAParams.hardPacketLimit = xfrm->lft.hard_packet_limit;
 	}
-
-	SAParams.bEncapsulationMode = ASF_IPSEC_SA_SAFLAGS_TUNNELMODE;
+//To support transport mode
+	SAParams.bEncapsulationMode = (xfrm->props.mode == XFRM_MODE_TRANSPORT)? 
+					ASF_IPSEC_SA_SAFLAGS_TRANSPORTMODE: 
+					ASF_IPSEC_SA_SAFLAGS_TUNNELMODE;
 	SAParams.handleToSOrDSCPAndFlowLabel = ASF_IPSEC_QOS_TOS_COPY;
 	/*if not copy than set - SAParams.qos = defined value */
 	SAParams.handleDFBit = ASF_IPSEC_DF_COPY;
@@ -932,6 +949,8 @@ int asfctrl_xfrm_add_insa(struct xfrm_state *xfrm, struct xfrm_policy *xp)
 
 	SAParams.bDoAntiReplayCheck =
 		SAParams.bDoAntiReplayCheck ? bAntiReplayCheck : 0;
+//Abhishek -added ESN flag
+        SAParams.bUseExtendedSequenceNumber = (xfrm->props.flags & XFRM_STATE_ESN)?1:0;
 
 	if (xfrm->props.replay_window < 32)
 		SAParams.replayWindowSize = 32;
@@ -963,7 +982,10 @@ int asfctrl_xfrm_add_insa(struct xfrm_state *xfrm, struct xfrm_policy *xp)
 		SAParams.hardPacketLimit = xfrm->lft.hard_packet_limit;
 	}
 
-	SAParams.bEncapsulationMode = ASF_IPSEC_SA_SAFLAGS_TUNNELMODE;
+	//SAParams.bEncapsulationMode = ASF_IPSEC_SA_SAFLAGS_TUNNELMODE;
+	SAParams.bEncapsulationMode = (xfrm->props.mode == XFRM_MODE_TRANSPORT)? 
+					ASF_IPSEC_SA_SAFLAGS_TRANSPORTMODE: 
+					ASF_IPSEC_SA_SAFLAGS_TUNNELMODE;
 	SAParams.handleToSOrDSCPAndFlowLabel = ASF_IPSEC_QOS_TOS_COPY;
 	SAParams.handleDFBit = ASF_IPSEC_DF_COPY;
 	SAParams.protocol = xfrm->id.proto;
@@ -1726,12 +1748,24 @@ int asfctrl_ipsec_km_register(void)
 void asfctrl_xfrm_dump_tmpl(struct xfrm_tmpl *t)
 {
 	if (t) {
+		if(t->mode ==  XFRM_MODE_TUNNEL) 
+		{
 		ASFCTRL_INFO("TMPL daddr = 0x%x, spi=0x%x, saddr = 0x%x,"
 			"proto=0x%x, encap = %d reqid = %d, mode = %d,"
 			"allalgs=0x%x, eal=0x%x, aal=0x%x, cal =0x%x\n",
 			t->id.daddr.a4, t->id.spi, t->saddr.a4,
 			t->id.proto, t->encap_family, t->reqid, t->mode,
 			t->allalgs, t->ealgos, t->aalgos, t->calgos);
+		}
+		else
+		{
+		  ASFCTRL_INFO("TMPL  spi=0x%x, "
+			"proto=0x%x, encap = %d reqid = %d, mode = %d,"
+			"allalgs=0x%x, eal=0x%x, aal=0x%x, cal =0x%x\n",
+			 t->id.spi, 
+			t->id.proto, t->encap_family, t->reqid, t->mode,
+			t->allalgs, t->ealgos, t->aalgos, t->calgos);
+		}
 	}
 }
 
@@ -1746,13 +1780,18 @@ void asfctrl_xfrm_dump_policy(struct xfrm_policy *xp, u8 dir)
 	ASFCTRL_INFO("type=%d, Flags =0x%x  NR=%d, tmpl = %p, security = %p",
 		xp->type, xp->flags, xp->xfrm_nr, xp->xfrm_vec, xp->security);
 
+	if(xp->xfrm_vec[0].mode ==  XFRM_MODE_TUNNEL) 
+	{
 	ASFCTRL_INFO(" SELECTOR - saddr =0x%x, daddr 0x%x, prefix_s=%u,"
 		"sport=%u, prefix_d=%u, dport=%u, IFINDEX=%d",
 		xp->selector.saddr.a4, xp->selector.daddr.a4,
 		xp->selector.prefixlen_s, xp->selector.sport,
 		xp->selector.prefixlen_d, xp->selector.dport,
 		xp->selector.ifindex);
-
+	}
+	else
+	{
+	}
 	if (uctx) {
 		ASFCTRL_INFO("  ctx_doi=%u, ctx_alg=%u,"
 			"ctx_len=%u, ctx_sid=%u",
@@ -1767,7 +1806,9 @@ void asfctrl_xfrm_dump_state(struct xfrm_state *xfrm)
 	struct xfrm_sec_ctx *uctx = xfrm->security;
 	struct xfrm_algo_aead *aead = xfrm->aead;
 	struct esp_data *esp = xfrm->data;
+#ifdef ASFCTRL_IPSEC_DEBUG2
 	int i;
+#endif
 
 	ASFCTRL_INFO("SA- STATE = family = %u proto=%d",
 			xfrm->sel.family, xfrm->sel.proto);

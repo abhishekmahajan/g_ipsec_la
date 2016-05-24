@@ -1484,8 +1484,9 @@ void asfctrl_linux_register_ffp(void)
 	}
 #endif
 
-
-	fwasfctrl.firewall_asfctrl_cb = asfctrl_invalidate_sessions_by_ns;
+//Abhishek - As no argument is passed..
+	fwasfctrl.firewall_asfctrl_cb = asfctrl_invalidate_sessions;
+//	fwasfctrl.firewall_asfctrl_cb = asfctrl_invalidate_sessions_by_ns;
 	hook_firewall_asfctrl_cb(&fwasfctrl);
 
 	inacCmd.ulDivisor = asf_ffp_activity_divisor;
