@@ -33,98 +33,98 @@ typedef struct ASFFFPXtraFlowStats_s {
 } ASFFFPXtraFlowStats_t;
 
 typedef struct ASFFFPXtraGlobalStats_s {
-	unsigned long   ulBridgePkts;
-	unsigned long   ulInvalidBridgeDev;
-	unsigned long   ulVlanPkts;
-	unsigned long   ulInvalidVlanDev;
-	unsigned long   ulPPPoEPkts;
-	unsigned long   ulPPPoEUnkPkts;
-	unsigned long   ulInvalidPPPoEDev;
+	ULONG   ulBridgePkts;
+	ULONG   ulInvalidBridgeDev;
+	ULONG   ulVlanPkts;
+	ULONG   ulInvalidVlanDev;
+	ULONG   ulPPPoEPkts;
+	ULONG   ulPPPoEUnkPkts;
+	ULONG   ulInvalidPPPoEDev;
 
-	unsigned long   ulNonIpPkts;
-	unsigned long   ulNonTcpUdpPkts;
-	unsigned long   ulVsgSzoneUnk;
-	unsigned long   ulInvalidCsum;
+	ULONG   ulNonIpPkts;
+	ULONG   ulNonTcpUdpPkts;
+	ULONG   ulVsgSzoneUnk;
+	ULONG   ulInvalidCsum;
 
-	unsigned long   ulIpOptPkts;
+	ULONG   ulIpOptPkts;
 
-	unsigned long   ulLocalCsumVerify;
-	unsigned long   ulLocalBadCsum;
-	unsigned long   ulUdpBlankCsum;
+	ULONG   ulLocalCsumVerify;
+	ULONG   ulLocalBadCsum;
+	ULONG   ulUdpBlankCsum;
 
-	unsigned long   ulIpOptProcFail;
+	ULONG   ulIpOptProcFail;
 
-	unsigned long   ulIpFragPkts;
-	unsigned long   ulbDropPkts;
+	ULONG   ulIpFragPkts;
+	ULONG   ulbDropPkts;
 
-	unsigned long   ulCondition1;
-	unsigned long   ulCondition2;
+	ULONG   ulCondition1;
+	ULONG   ulCondition2;
 
-	unsigned long   ulUdpPkts;
-	unsigned long   ulTcpPkts;
-	unsigned long   ulTcpHdrLenErr;
-	unsigned long   ulTcpTimeStampErr;
-	unsigned long   ulTcpOutOfSequenceErr;
-	unsigned long   ulTcpProcessErr;
+	ULONG   ulUdpPkts;
+	ULONG   ulTcpPkts;
+	ULONG   ulTcpHdrLenErr;
+	ULONG   ulTcpTimeStampErr;
+	ULONG   ulTcpOutOfSequenceErr;
+	ULONG   ulTcpProcessErr;
 
-	unsigned long   ulNatPkts;
-	unsigned long   ulBlankL2blobInd;
-	unsigned long   ulFragAndXmit;
-	unsigned long   ulNormalXmit;
-	unsigned long   ulL2hdrAdjust;
-	unsigned long   ulDevXmitErr;
-	unsigned long   ulFlowEndInd;
-	unsigned long   ulPktCtxInacRefreshInd;
-	unsigned long   ulPktCtxL2blobInd;
-	unsigned long   ulNetIfQStopped;
+	ULONG   ulNatPkts;
+	ULONG   ulBlankL2blobInd;
+	ULONG   ulFragAndXmit;
+	ULONG   ulNormalXmit;
+	ULONG   ulL2hdrAdjust;
+	ULONG   ulDevXmitErr;
+	ULONG   ulFlowEndInd;
+	ULONG   ulPktCtxInacRefreshInd;
+	ULONG   ulPktCtxL2blobInd;
+	ULONG   ulNetIfQStopped;
 
-	unsigned long   ulCreateFlowsCmd;
-	unsigned long   ulCreateFlowsCmdVsgErr;
-	unsigned long   ulCreateFlowsCmdErrDown;
-	unsigned long   ulCreateFlowsCmdErrDown1;
-	unsigned long   ulCreateFlowsCmdErrDown2;
-	unsigned long   ulCreateFlowsCmdFailures;
-	unsigned long   ulDeleteFlowsCmd;
-	unsigned long   ulDeleteFlowsCmdFailures;
-	unsigned long   ulModifyFlowsCmd;
-	unsigned long   ulModifyFlowsCmdFailures;
+	ULONG   ulCreateFlowsCmd;
+	ULONG   ulCreateFlowsCmdVsgErr;
+	ULONG   ulCreateFlowsCmdErrDown;
+	ULONG   ulCreateFlowsCmdErrDown1;
+	ULONG   ulCreateFlowsCmdErrDown2;
+	ULONG   ulCreateFlowsCmdFailures;
+	ULONG   ulDeleteFlowsCmd;
+	ULONG   ulDeleteFlowsCmdFailures;
+	ULONG   ulModifyFlowsCmd;
+	ULONG   ulModifyFlowsCmdFailures;
 
-	unsigned long   ulBlobTmrCalls;
-	unsigned long   ulTmrCtxL2blobInd;
-	unsigned long   ulBlobTmrCtxBadFlow;
+	ULONG   ulBlobTmrCalls;
+	ULONG   ulTmrCtxL2blobInd;
+	ULONG   ulBlobTmrCtxBadFlow;
 
-	unsigned long   ulInacTmrCalls;
-	unsigned long   ulTmrCtxInacInd;
-	unsigned long   ulInacTmrCtxBadFlow1;
-	unsigned long   ulInacTmrCtxBadFlow2;
+	ULONG   ulInacTmrCalls;
+	ULONG   ulTmrCtxInacInd;
+	ULONG   ulInacTmrCtxBadFlow1;
+	ULONG   ulInacTmrCtxBadFlow2;
 
-	unsigned long   ulInacTmrCtxAutoFlowDel;
+	ULONG   ulInacTmrCtxAutoFlowDel;
 
-	unsigned long   ulPktCmdTxInPkts;
-	unsigned long   ulPktCmdTxBlobRefresh;
-	unsigned long   ulPktCmdTxAutoFlowCreate;
-	unsigned long   ulPktCmdTxAutoFlowBlobRefresh;
-	unsigned long   ulPktCmdTxLogicalDevErr;
-	unsigned long   ulPktCmdTxNonIpErr;
+	ULONG   ulPktCmdTxInPkts;
+	ULONG   ulPktCmdTxBlobRefresh;
+	ULONG   ulPktCmdTxAutoFlowCreate;
+	ULONG   ulPktCmdTxAutoFlowBlobRefresh;
+	ULONG   ulPktCmdTxLogicalDevErr;
+	ULONG   ulPktCmdTxNonIpErr;
 
-	unsigned long   ulPktCmdTxDummyPkt;
-	unsigned long   ulPktCmdTxValidPkt;
-	unsigned long   ulPktCmdTxFlowFound;
-	unsigned long   ulPktCmdTxBlobInitialUpdates;
-	unsigned long   ulPktCmdTxBlobTmrErr;
-	unsigned long   ulPktCmdTxInacTmrErr;
-	unsigned long   ulPktCmdTxVlanTag;
-	unsigned long   ulPktCmdTxSkbFrees;
-	unsigned long   ulPktCmdTxInvalidFlowErr;
+	ULONG   ulPktCmdTxDummyPkt;
+	ULONG   ulPktCmdTxValidPkt;
+	ULONG   ulPktCmdTxFlowFound;
+	ULONG   ulPktCmdTxBlobInitialUpdates;
+	ULONG   ulPktCmdTxBlobTmrErr;
+	ULONG   ulPktCmdTxInacTmrErr;
+	ULONG   ulPktCmdTxVlanTag;
+	ULONG   ulPktCmdTxSkbFrees;
+	ULONG   ulPktCmdTxInvalidFlowErr;
 
-	unsigned long   ulPktCtxAutoFlowDel;
-	unsigned long   ulAutoFlowBlobRefreshSentUp;
-	unsigned long   ulAutoFlowCreateSentUp;
+	ULONG   ulPktCtxAutoFlowDel;
+	ULONG   ulAutoFlowBlobRefreshSentUp;
+	ULONG   ulAutoFlowCreateSentUp;
 
-	unsigned long   ulPktCmdTxHdrSizeErr;
-	unsigned long   ulPktCmdBlobSkbFrees;
-	unsigned long   ulPktCmdTxAutoDelFlows;
-	unsigned long   ulPktCmdTxAutoFlowCreateErr;
+	ULONG   ulPktCmdTxHdrSizeErr;
+	ULONG   ulPktCmdBlobSkbFrees;
+	ULONG   ulPktCmdTxAutoDelFlows;
+	ULONG   ulPktCmdTxAutoFlowCreateErr;
 
 
 } ASFFFPXtraGlobalStats_t;
@@ -238,9 +238,9 @@ typedef struct ffp_flow_s {
 #ifdef ASF_FFP_XTRA_STATS
 	ASFFFPXtraFlowStats_t   xstats;
 #endif
-	unsigned long	   ulInacTime; /* time in jiffies */
-	unsigned long	   ulLastPktInAt; /* jiffies at which last packet was seen */
-	unsigned long	   ulLastL2ValidationTime;
+	ULONG	   ulInacTime; /* time in jiffies */
+	ULONG	   ulLastPktInAt; /* jiffies at which last packet was seen */
+	ULONG	   ulLastL2ValidationTime;
 
 	unsigned int	    ulTcpTimeStamp;	/* current time stamp value */
 	ASFFFPTcpState_t	tcpState;

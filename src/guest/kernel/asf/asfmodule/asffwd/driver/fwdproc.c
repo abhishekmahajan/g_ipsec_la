@@ -89,7 +89,7 @@ extern int fwd_debug_show_count;
 extern struct proc_dir_entry *asf_dir;
 
 #define _GSTATS_SUM(a) (total.ul##a += gfwdstats->ul##a)
-#define _GSTATS_TOTAL(a) (unsigned long) total.ul##a
+#define _GSTATS_TOTAL(a) (ULONG) total.ul##a
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 void print_bigbuf(struct seq_file *m, char *s);
@@ -128,7 +128,7 @@ static int display_asf_proc_fwd_global_stats(struct seq_file *m, void *v)
 	return 0;
 }
 #define _VSTATS_SUM(a) (total.ul##a += vsgstats->ul##a)
-#define _VSTATS_TOTAL(a) (unsigned long)total.ul##a
+#define _VSTATS_TOTAL(a) (ULONG)total.ul##a
 static int display_asf_proc_fwd_vsg_stats(struct seq_file *m, void *v)
 {
 	ASFFwdVsgStats_t total;
@@ -222,7 +222,7 @@ static int display_asf_proc_fwd_flow_stats(struct seq_file *m, void *v)
 	}
 	if ((p-buf) > (200*(fwd_debug_show_count+2))) {
 		printk("Ooops! buffer is overwriten! allocated %u and required %lu to display %d items\n",
-		       200*(fwd_debug_show_count+2), (unsigned long)(p-buf), fwd_debug_show_count);
+		       200*(fwd_debug_show_count+2), (ULONG)(p-buf), fwd_debug_show_count);
 	}
 
 	print_bigbuf(m,buf);

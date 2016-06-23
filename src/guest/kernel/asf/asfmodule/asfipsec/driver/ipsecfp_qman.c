@@ -130,7 +130,7 @@ static inline int qm_cgr_cs_thres_set64(struct qm_cgr_cs_thres *th, u64 val,
 #endif
 
 /* Tasklet handler to get upto budget number of frames */
-static void secfp_poll(unsigned long budget)
+static void secfp_poll(ULONG budget)
 {
 #define SECFP_BUDGET 64
 	qman_poll_dqrr(SECFP_BUDGET);

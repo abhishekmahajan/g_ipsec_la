@@ -74,8 +74,8 @@ struct device *pdev;
 #ifdef CONFIG_ASF_SEC3x
 struct secfp_iv_info_s {
 	dma_addr_t paddr;
-	unsigned long *vaddr;
-	unsigned long ul_iv_index;
+	ULONG *vaddr;
+	ULONG ul_iv_index;
 	bool b_update_pending;
 	unsigned int ul_num_avail;
 	unsigned int ul_update_index;
@@ -236,7 +236,7 @@ unsigned int secfp_IVinit(void)
 			ptr = per_cpu_ptr(secfp_IVData, ii);
 
 #ifdef SECFP_USE_L2SRAM
-			ptr->paddr = (unsigned long) (SECFP_SRAM_BASE +
+			ptr->paddr = (ULONG) (SECFP_SRAM_BASE +
 				SECFP_SRAM_SIZE + SECFP_OUTSA_TABLE_SIZE +
 				SECFP_INSA_TABLE_SIZE +
 				(ii * SECFP_NUM_IV_ENTRIES *
@@ -699,7 +699,7 @@ ret_pkt:
 		ASF_boolean_t bExpiry = ASF_FALSE;
 
 		if (pSA->SAParams.hardKbyteLimit) {
-			unsigned long ulKBytes = 0;
+			ULONG ulKBytes = 0;
 			for_each_possible_cpu(cpu) {
 				ulKBytes += pSA->ulBytes[cpu];
 			}
@@ -720,7 +720,7 @@ ret_pkt:
 			}
 		}
 		if (pSA->SAParams.hardPacketLimit) {
-			unsigned long uPacket = 0;
+			ULONG uPacket = 0;
 
 			for_each_possible_cpu(cpu) {
 				uPacket += pSA->ulPkts[cpu];
@@ -1012,7 +1012,7 @@ secfp_finishOffloadOutPacket(struct sk_buff *skb, outSA_t *pSA,
 	unsigned short	tot_len = 0;
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM)
 	int cpu;
-	unsigned long uPacket = 0;
+	ULONG uPacket = 0;
 	ASF_IPSecTunEndAddr_t TunAddress;
 	unsigned short	bl2blobRefresh = 0;
 #endif
@@ -1132,7 +1132,7 @@ ret_pkt:
 		ASF_boolean_t bExpiry = ASF_FALSE;
 
 		if (pSA->SAParams.hardKbyteLimit) {
-			unsigned long ulKBytes = 0;
+			ULONG ulKBytes = 0;
 			for_each_possible_cpu(cpu) {
 				ulKBytes += pSA->ulBytes[cpu];
 			}
@@ -2552,6 +2552,21 @@ static inline unsigned int secfp_inHandleICVCheck(void *dsc, struct sk_buff *skb
 unsigned int ulNumIter[NR_CPUS];
 #endif
 
+static inline int secfp_inCompleteCheckAndTrimPktTrnsprt(
+			struct sk_buff *pHeadSkb,
+                        struct sk_buff *pTailSkb,
+                        unsigned int *pTotLen,
+                        unsigned char *pNextProto,
+                        ASF_IPAddr_t *daddr)
+{
+printk("\ntest: Entering secfp_inCompleteCheckAndTrimPktTrnsprt : %d\n", __LINE__);
+        struct iphdr *iph = (struct iphdr *)*(uintptr_t *)
+                                &(pHeadSkb->cb[SECFP_IPHDR_INDEX]);
+        struct iphdr *inneriph = (struct iphdr *)(pHeadSkb->data);
+	unsigned int ulStripLen;
+printk("\ntest: Exiting secfp_inCompleteCheckAndTrimPktTrnsprt : %d\n", __LINE__);
+	return 0;
+}
 static inline int secfp_inCompleteCheckAndTrimPkt(
 			struct sk_buff *pHeadSkb,
 			struct sk_buff *pTailSkb,
@@ -2982,7 +2997,44 @@ int secfp_inCompleteSAProcess(struct sk_buff **pSkb,
 	rcu_read_unlock();
 	return 0;
 }
-
+void secfp_inHeaderMove(struct sk_buff *pHeadSkb, int encapMode)
+{
+	char *ch;
+	char * ch_dst;
+	int i;
+#ifdef ASF_IPV6_FP_SUPPORT
+#else
+	int shift_len =0 ;
+	if(encapMode == ASF_IPSEC_SA_SAFLAGS_TUNNELMODE)
+	{
+		shift_len = IP_HEADER + ESP_LEN + pHeadSkb->cb[SECFP_IV_DATA_INDEX];
+		ch = (char *)(pHeadSkb->data - shift_len - MAC_LEN);
+		ch_dst = (char *)(pHeadSkb->data - MAC_LEN);
+		for (i=0; i< MAC_LEN; i++,ch++,ch_dst++)
+		{
+		    *ch_dst = *ch;
+		}
+		skb_set_transport_header(pHeadSkb, IP_HEADER);
+		skb_set_mac_header(pHeadSkb,-pHeadSkb->mac_len);
+	}
+	else //ASF_IPSEC_SA_SAFLAGS_TRANSPORTMODE//
+	{
+		//Move mac header
+	    //when push is done after shifing
+		shift_len =  ESP_LEN + pHeadSkb->cb[SECFP_IV_DATA_INDEX];
+		ch = (char *)(pHeadSkb->data - shift_len -1);
+		ch_dst = (char *)(pHeadSkb->data - 1);
+		for (i = MAC_LEN + IP_HEADER-1 ; i>=0 ; i--,ch--,ch_dst--)
+		{
+		    *ch_dst = *ch;
+		}
+		//Move mac header
+		skb_set_transport_header(pHeadSkb, IP_HEADER);
+		skb_set_mac_header(pHeadSkb,-IP_HEADER-pHeadSkb->mac_len );
+		skb_push(pHeadSkb, IP_HEADER);
+	}
+#endif
+}
 void secfp_inCompleteUpdateIpv4Pkt(struct sk_buff *pHeadSkb)
 {
 	struct iphdr *iph;
@@ -3606,6 +3658,7 @@ void secfp_inComplete(struct device *dev, u32 *pdesc,
 	/* Packet is ready to go */
 	/* Assuming ethernet as the receiving device of original packet */
 	if (ucNextProto == SECFP_PROTO_IP) {
+		secfp_inHeaderMove(skb, encapMode);
 		secfp_inCompleteUpdateIpv4Pkt(skb);
 		skb->protocol = ntohs(ETH_P_IP);
 
@@ -4348,7 +4401,7 @@ So all these special boundary cases need to be handled for nr_frags*/
 		if (ASFIPSecCbFn.pFnSAExpired) {
 			int cpu;
 			if (pSA->SAParams.hardKbyteLimit) {
-				unsigned long ulKBytes = len;
+				ULONG ulKBytes = len;
 				for_each_possible_cpu(cpu) {
 					ulKBytes += pSA->ulBytes[cpu];
 				}
@@ -4377,7 +4430,7 @@ So all these special boundary cases need to be handled for nr_frags*/
 				}
 			}
 			if (pSA->SAParams.hardPacketLimit) {
-				unsigned long uPacket = 1;
+				ULONG uPacket = 1;
 
 				for_each_possible_cpu(cpu) {
 					uPacket += pSA->ulPkts[cpu];
@@ -5134,7 +5187,7 @@ So all these special boundary cases need to be handled for nr_frags*/
 		if (unlikely(ASFIPSecCbFn.pFnSAExpired)) {
 			int cpu;
 			if (pSA->SAParams.hardKbyteLimit) {
-				unsigned long ulKBytes = len;
+				ULONG ulKBytes = len;
 				for_each_possible_cpu(cpu) {
 					ulKBytes += pSA->ulBytes[cpu];
 				}
@@ -5159,7 +5212,7 @@ So all these special boundary cases need to be handled for nr_frags*/
 				}
 			}
 			if (pSA->SAParams.hardPacketLimit) {
-				unsigned long uPacket = 1;
+				ULONG uPacket = 1;
 
 				for_each_possible_cpu(cpu) {
 					uPacket += pSA->ulPkts[cpu];
@@ -5273,18 +5326,19 @@ sa_expired:
 				(secin_sg_flag & SECFP_SCATTER_GATHER)
 				? pSA->inCompleteWithFrags : pSA->inComplete,
 				(void *)pHeadSkb) == -EAGAIN)
-#else
-#ifdef ASF_FP_LINUX_CRYPTO
-            if (unlikely(asf_fp_linux_decap(pSA,pHeadSkb,
-                                    (secin_sg_flag & SECFP_SCATTER_GATHER) ?
-                            pSA->inCompleteWithFrags : pSA->inComplete,
-                            (void *)pHeadSkb)))
+//not reachable
+//#ifdef ASF_FP_LINUX_CRYPTO
+//		printk("Calling asf_fp_linux_decap %d\n", __LINE__);
+//            if (unlikely(asf_fp_linux_decap(pSA,pHeadSkb,
+//                                   (secin_sg_flag & SECFP_SCATTER_GATHER) ?
+//                            pSA->inCompleteWithFrags : pSA->inComplete,
+//                            (void *)pHeadSkb)))
 #else
 			if (secfp_vio_decap(pSA,pHeadSkb, 
 						(secin_sg_flag & SECFP_SCATTER_GATHER) ?
 					pSA->inCompleteWithFrags : pSA->inComplete,
 					(void *)pHeadSkb))
-#endif
+//#endif
 #endif
 				{
 				ASFIPSEC_WARN("Inbound Submission to SEC failed");

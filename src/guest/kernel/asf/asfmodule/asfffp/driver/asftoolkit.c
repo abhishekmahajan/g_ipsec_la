@@ -55,9 +55,9 @@
 #define MAX_ETH_IF 4
 
 #ifndef CONFIG_DPA
-static int config_lan_afx(unsigned long);
-static int config_lan_filer(unsigned long);
-static int read_lan_filer(unsigned long);
+static int config_lan_afx(ULONG);
+static int config_lan_filer(ULONG);
+static int read_lan_filer(ULONG);
 #endif
 
 static int asf_interface_open(struct inode *inode, struct file *filp);
@@ -69,7 +69,7 @@ static int asf_interface_ioctl(struct inode *inode,
 static long asf_interface_ioctl(struct file *filp,
 #endif
 			       unsigned int cmd,
-			       unsigned long arg);
+			       ULONG arg);
 /*!
   \brief Interfaces provided by this driver
 */
@@ -149,7 +149,7 @@ static int asf_interface_ioctl(struct inode *inode,
 static long asf_interface_ioctl(struct file *filp,
 #endif
 				unsigned int cmd,
-				unsigned long arg)
+				ULONG arg)
 {
 	int ret = 0;
 
@@ -194,7 +194,7 @@ static long asf_interface_ioctl(struct file *filp,
 }
 
 #ifndef CONFIG_DPA
-static int config_lan_afx(unsigned long arg)
+static int config_lan_afx(ULONG arg)
 {
 	ioctl_config_lan_afx_t		config;
 	filer_afx_t			*afx;
@@ -245,7 +245,7 @@ static int config_lan_afx(unsigned long arg)
 }
 #endif
 
-static int config_lan_filer(unsigned long arg)
+static int config_lan_filer(ULONG arg)
 {
 	ioctl_config_lan_filer_t	lan_filer;
 	lan_ftr_t			*filer_rule, *rule;
@@ -317,7 +317,7 @@ static int config_lan_filer(unsigned long arg)
 	return 0;
 }
 
-static int read_lan_filer(unsigned long arg)
+static int read_lan_filer(ULONG arg)
 {
 	int				i;
 	u32				rqfcr, rqfpr;

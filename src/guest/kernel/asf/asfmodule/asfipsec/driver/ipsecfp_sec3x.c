@@ -617,7 +617,7 @@ unsigned int secfp_inHandleICVCheck3x(void *dsc, struct sk_buff *skb)
 				return 0;
 			}
 		} else {
-			unsigned long int ulESNLen;
+			ULONG int ulESNLen;
 			if (*((unsigned int *)(skb->data + skb->len
 				+ SECFP_ESN_MARKER_POSITION)) == 0xAAAAAAAA) {
 				ulESNLen = SECFP_APPEND_BUF_LEN_FIELD;

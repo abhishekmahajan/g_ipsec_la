@@ -88,7 +88,7 @@ int asf_fwd_inac_divisor = 1;
 asf_max_val_t fwd_max_flows = ASF_FWD_MAX_FLOWS;
 asf_max_val_t fwd_max_flows_per_vsg = ASF_FWD_MAX_FLOWS;
 fwd4_bucket_t *fwd_flow_cache;
-unsigned long asf_fwd_hash_init_value;
+ULONG asf_fwd_hash_init_value;
 static unsigned int  fwd_flow4_pool_id = -1;
 static unsigned int  fwd4_inac_tmr_pool_id = -1;
 int fwp_max_flows = ASF_FWD_MAX_FLOWS;
@@ -146,12 +146,12 @@ static void fwd_flow_free_rcu(struct rcu_head *rcu)
 }
 #endif
 
-static inline unsigned long _fwd_cmpute_hash(
+static inline ULONG _fwd_cmpute_hash(
 				ASF_uint32_t ulVsgId,
 				ASF_uint32_t ulSrcIp,
 				ASF_uint32_t ulDestIp,
 				ASF_uint8_t  tos,
-				unsigned long initval)
+				ULONG initval)
 {
         ASF_uint32_t ultos = (ASF_uint32_t )tos; 
 	ulSrcIp += rule_salt;

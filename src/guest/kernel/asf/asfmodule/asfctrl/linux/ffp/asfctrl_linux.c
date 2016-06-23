@@ -505,7 +505,7 @@ char *print_netevent(int event)
 #endif
 
 static int asfctrl_dev_notifier_fn(struct notifier_block *this,
-				unsigned long event, void *ptr)
+				ULONG event, void *ptr)
 {
 #if 0 /* Linux verions less than 3.8 */
 	struct net_device *dev = (struct net_device *)(ptr);

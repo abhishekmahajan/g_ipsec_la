@@ -18,6 +18,7 @@
 
 #define NUM_APP_CB_INFO	5
 
+typedef unsigned int ULONG;
 typedef unsigned int (*asfTmrCbFn)(unsigned int , unsigned int, unsigned int , unsigned int, unsigned int);
 
 
@@ -25,7 +26,7 @@ struct asfTmr_s {
 	struct rcu_head rcu;
 	struct asfTmr_s *pNext;
 	struct asfTmr_s *pPrev;
-	unsigned long ulState;
+	ULONG ulState;
 	unsigned short int ulCoreId;
 	unsigned int ulBucketIndex;
 	unsigned int ulPoolId;

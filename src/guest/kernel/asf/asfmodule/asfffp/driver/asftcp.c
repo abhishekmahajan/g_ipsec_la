@@ -73,11 +73,11 @@ extern int asf_tcp_rst_timeout;
 static inline int asfTcpCheckForNormalOos(
 					 ffp_flow_t *flow,
 					 ffp_flow_t *oth_flow,
-					 unsigned long ulSeqNum,
-					unsigned long ulAckNum,
+					 ULONG ulSeqNum,
+					ULONG ulAckNum,
 					asf_vsg_info_t *vsgInfo)
 {
-	unsigned long ulSendNext, ulOtherRcvNext;
+	ULONG ulSendNext, ulOtherRcvNext;
 
 	ulOtherRcvNext  = oth_flow->tcpState.ulRcvNext;
 	if (flow->tcpState.bPositiveDelta)
@@ -115,13 +115,13 @@ static inline int asfTcpCheckForNormalOos(
 static inline int asfTcpCheckForRstOos(
 				      ffp_flow_t *flow,
 				      ffp_flow_t *oth_flow,
-				      unsigned long ulSeqNum,
-				unsigned long ulAckNum,
+				      ULONG ulSeqNum,
+				ULONG ulAckNum,
 				struct tcphdr *tcph,
 				asf_vsg_info_t *vsgInfo)
 {
 
-	unsigned long ulSendNext, ulOtherRcvNext;
+	ULONG ulSendNext, ulOtherRcvNext;
 
 	ulSendNext = flow->tcpState.ulHighSeqNum;
 

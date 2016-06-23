@@ -9,7 +9,7 @@
       Linux iptables, conntrack, ip_route and xfrm.
 
   To add these hooks, apply the patch (g_ipsec_la/src/guest/kernel/as-fastpath.patch) to the kernel
-  tree.  This patch is derived from linux version 4.1.8.  It may be necessary to apply this patch
+  tree.  This patch is derived from linux version 3.19.8.  It may be necessary to apply this patch
   manually.
   
   After applying the patch, enable the following options in Linux configuration using menuconfig

@@ -1,49 +1,69 @@
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/drivers/net/Kconfig ls2-linux-rc8/drivers/net/Kconfig
---- ls2-linux-rc8-nov3-bhaskar-clean/drivers/net/Kconfig	2015-10-20 22:16:38.000000000 -0700
-+++ ls2-linux-rc8/drivers/net/Kconfig	2015-11-04 18:02:36.741913176 -0800
-@@ -24,6 +24,39 @@
+diff -Naur wo_vivid/.config c_vivid/.config
+--- wo_vivid/.config	2016-02-10 11:50:05.020000000 +0530
++++ c_vivid/.config	2016-02-10 11:11:10.148000000 +0530
+@@ -1,6 +1,6 @@
+ #
+ # Automatically generated file; DO NOT EDIT.
+-# Linux/x86_64 3.19.0-37-generic Kernel Configuration
++# Linux/x86 3.19.8-ckt9 Kernel Configuration
+ #
+ CONFIG_64BIT=y
+ CONFIG_X86_64=y
+@@ -2320,6 +2320,7 @@
+ CONFIG_MACINTOSH_DRIVERS=y
+ CONFIG_MAC_EMUMOUSEBTN=m
+ CONFIG_NETDEVICES=y
++CONFIG_AS_FASTPATH=y
+ CONFIG_MII=m
+ CONFIG_NET_CORE=y
+ CONFIG_BONDING=m
+diff -Naur wo_vivid/drivers/net/Kconfig c_vivid/drivers/net/Kconfig
+--- wo_vivid/drivers/net/Kconfig	2016-02-10 11:51:22.420000000 +0530
++++ c_vivid/drivers/net/Kconfig	2016-02-10 11:12:14.756000000 +0530
+@@ -24,7 +24,39 @@
  # All the following symbols are dependent on NETDEVICES - do not repeat
  # that for each of the symbols.
  if NETDEVICES
+-
 +config AS_FASTPATH
 +	default n
 +	bool "Application Specific FastPath"
-+	select NAMESPACES
-+	select NET_NS
-+	select NETFILTER
-+	select NETFILTER_ADVANCED
-+	select NF_CONNTRACK
-+	select NF_CONNTRACK_EVENTS
-+	select NF_CONNTRACK_FTP
-+	select NF_CONNTRACK_TFTP
-+	select NETFILTER_XTABLES
-+	select NF_CONNTRACK_IPV4
-+	select NF_CONNTRACK_PROC_COMPAT
-+	select IP_NF_IPTABLES
-+	select IP_NF_MATCH_ADDRTYPE
-+	select IP_NF_FILTER
-+	select NF_NAT_IPV4
-+	select IP_NF_TARGET_REJECT
-+	select NF_NAT_NEEDED
-+	select IP_NF_TARGET_MASQUERADE
-+	select IP_NF_TARGET_REDIRECT
-+	select NF_NAT_FTP
-+	select NF_NAT_TFTP
-+	select IP_NF_MANGLE
-+	select VLAN_8021Q
-+	select INET_AH
-+	select PPP
-+	select PPPOE
++#	select NAMESPACES
++#	select NET_NS
++#	select NETFILTER
++#	select NETFILTER_ADVANCED
++#	select NF_CONNTRACK
++#	select NF_CONNTRACK_EVENTS
++#	select NF_CONNTRACK_FTP
++#	select NF_CONNTRACK_TFTP
++#	select NETFILTER_XTABLES
++#	select NF_CONNTRACK_IPV4
++#	select NF_CONNTRACK_PROC_COMPAT
++#	select IP_NF_IPTABLES
++#	select IP_NF_MATCH_ADDRTYPE
++#	select IP_NF_FILTER
++#	select NF_NAT_IPV4
++#	select IP_NF_TARGET_REJECT
++#	select NF_NAT_NEEDED
++#	select IP_NF_TARGET_MASQUERADE
++#	select IP_NF_TARGET_REDIRECT
++#	select NF_NAT_FTP
++#	select NF_NAT_TFTP
++#	select IP_NF_MANGLE
++#	select VLAN_8021Q
++#	select INET_AH
++#	select PPP
++#	select PPPOE
 +	---help---
 +	  Enables application specific fastpath n/w stack that
 +	  accelerates the throughput for forwarding, firewall, NAT and IPsec
 +	  over native Linux stack.
- 
  config MII
  	tristate
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/drivers/net/virtio_net.c ls2-linux-rc8/drivers/net/virtio_net.c
---- ls2-linux-rc8-nov3-bhaskar-clean/drivers/net/virtio_net.c	2015-10-20 22:16:39.000000000 -0700
-+++ ls2-linux-rc8/drivers/net/virtio_net.c	2015-11-04 18:04:57.515316975 -0800
+ 
+diff -Naur wo_vivid/drivers/net/virtio_net.c c_vivid/drivers/net/virtio_net.c
+--- wo_vivid/drivers/net/virtio_net.c	2016-02-10 11:52:26.944000000 +0530
++++ c_vivid/drivers/net/virtio_net.c	2016-02-10 11:12:57.264000000 +0530
 @@ -36,6 +36,14 @@
  module_param(csum, bool, 0444);
  module_param(gso, bool, 0444);
@@ -59,11 +79,10 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/drivers/net/virtio_net.c ls2-linux-r
  /* FIXME: MTU in config. */
  #define GOOD_PACKET_LEN (ETH_HLEN + VLAN_HLEN + ETH_DATA_LEN)
  #define GOOD_COPY_LEN	128
-@@ -180,6 +188,40 @@
+@@ -180,6 +188,39 @@
  	return (struct virtio_net_hdr_mrg_rxbuf *)skb->cb;
  }
  
-+
 +/* SAI: changes for ASF  */
 +#ifdef CONFIG_AS_FASTPATH
 +devfp_hook_t devfp_rx_hook_veth;
@@ -100,13 +119,13 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/drivers/net/virtio_net.c ls2-linux-r
  /*
   * private is used to chain pages for big packets, put the whole
   * most recent used list in the beginning for reuse
-@@ -518,6 +560,17 @@
+@@ -517,7 +558,17 @@
+ 	}
  
  	skb_mark_napi_id(skb, &rq->napi);
- 
 +#ifdef CONFIG_AS_FASTPATH
 +	skb->pkt_type = PACKET_HOST;
-+
+ 
 +        printk("skb->pkt_type = %d\n", skb->pkt_type);
 +        if (devfp_rx_hook_veth) {
 +                printk("Calling devfp_rx_hook %p\n", devfp_rx_hook_veth);
@@ -118,15 +137,33 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/drivers/net/virtio_net.c ls2-linux-r
  	netif_receive_skb(skb);
  	return;
  
-@@ -850,6 +903,80 @@
+@@ -849,6 +900,11 @@
+ 	bool can_push;
  
  	pr_debug("%s: xmit %p %pM\n", vi->dev->name, skb, dest);
- 
 +#ifdef CONFIG_AS_FASTPATH
 +        if (devfp_tx_hook_veth && (skb->pkt_type != PACKET_FASTROUTE))
 +                if (devfp_tx_hook_veth(skb, vi->dev) == AS_FP_STOLEN)
 +                        return 0;
 +#endif
+ 
+ 	can_push = vi->any_header_sg &&
+ 		!((unsigned long)skb->data & (__alignof__(*hdr) - 1)) &&
+@@ -906,6 +962,75 @@
+ 	return virtqueue_add_outbuf(sq->vq, sq->sg, num_sg, skb, GFP_ATOMIC);
+ }
+ 
++#ifdef CONFIG_AS_FASTPATH
++static int asf_xmit_skb(struct send_queue *sq, struct sk_buff *skb)
++{
++	struct virtio_net_hdr_mrg_rxbuf *hdr;
++	const unsigned char *dest = ((struct ethhdr *)skb->data)->h_dest;
++	struct virtnet_info *vi = sq->vq->vdev->priv;
++	unsigned num_sg;
++	unsigned hdr_len = vi->hdr_len;
++	bool can_push;
++
++	pr_debug("%s: xmit %p %pM\n", vi->dev->name, skb, dest);
 +
 +	can_push = vi->any_header_sg &&
 +		!((unsigned long)skb->data & (__alignof__(*hdr) - 1)) &&
@@ -183,34 +220,14 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/drivers/net/virtio_net.c ls2-linux-r
 +	}
 +	return virtqueue_add_outbuf(sq->vq, sq->sg, num_sg, skb, GFP_ATOMIC);
 +}
-+
-+#ifdef CONFIG_AS_FASTPATH
-+static int asf_xmit_skb(struct send_queue *sq, struct sk_buff *skb)
-+{
-+	struct virtio_net_hdr_mrg_rxbuf *hdr;
-+	const unsigned char *dest = ((struct ethhdr *)skb->data)->h_dest;
-+	struct virtnet_info *vi = sq->vq->vdev->priv;
-+	unsigned num_sg;
-+	unsigned hdr_len = vi->hdr_len;
-+	bool can_push;
-+
-+	pr_debug("%s: xmit %p %pM\n", vi->dev->name, skb, dest);
-+
- 	can_push = vi->any_header_sg &&
- 		!((unsigned long)skb->data & (__alignof__(*hdr) - 1)) &&
- 		!skb_header_cloned(skb) && skb_headroom(skb) >= hdr_len;
-@@ -905,6 +1032,8 @@
- 	}
- 	return virtqueue_add_outbuf(sq->vq, sq->sg, num_sg, skb, GFP_ATOMIC);
- }
 +EXPORT_SYMBOL(asf_xmit_skb);
 +#endif
- 
  static netdev_tx_t start_xmit(struct sk_buff *skb, struct net_device *dev)
  {
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/linux/netfilter/nf_conntrack_tcp.h ls2-linux-rc8/include/linux/netfilter/nf_conntrack_tcp.h
---- ls2-linux-rc8-nov3-bhaskar-clean/include/linux/netfilter/nf_conntrack_tcp.h	2015-10-20 22:16:42.000000000 -0700
-+++ ls2-linux-rc8/include/linux/netfilter/nf_conntrack_tcp.h	2015-11-04 18:13:34.496655610 -0800
+ 	struct virtnet_info *vi = netdev_priv(dev);
+diff -Naur wo_vivid/include/linux/netfilter/nf_conntrack_tcp.h c_vivid/include/linux/netfilter/nf_conntrack_tcp.h
+--- wo_vivid/include/linux/netfilter/nf_conntrack_tcp.h	2016-02-10 11:54:49.592000000 +0530
++++ c_vivid/include/linux/netfilter/nf_conntrack_tcp.h	2016-02-10 11:14:57.124000000 +0530
 @@ -11,6 +11,12 @@
  	u_int32_t	td_maxack;	/* max of ack */
  	u_int8_t	td_scale;	/* window scale factor */
@@ -224,13 +241,13 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/linux/netfilter/nf_conntrack
  };
  
  struct ip_ct_tcp {
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/linux/netfilter_ipv4/ip_tables.h ls2-linux-rc8/include/linux/netfilter_ipv4/ip_tables.h
---- ls2-linux-rc8-nov3-bhaskar-clean/include/linux/netfilter_ipv4/ip_tables.h	2015-10-20 22:16:42.000000000 -0700
-+++ ls2-linux-rc8/include/linux/netfilter_ipv4/ip_tables.h	2015-11-04 18:15:10.898786484 -0800
-@@ -68,6 +68,14 @@
- 				 const struct nf_hook_state *state,
+diff -Naur wo_vivid/include/linux/netfilter_ipv4/ip_tables.h c_vivid/include/linux/netfilter_ipv4/ip_tables.h
+--- wo_vivid/include/linux/netfilter_ipv4/ip_tables.h	2016-02-10 11:56:49.440000000 +0530
++++ c_vivid/include/linux/netfilter_ipv4/ip_tables.h	2016-02-10 11:18:24.212000000 +0530
+@@ -68,6 +68,13 @@
+ 				 const struct net_device *in,
+ 				 const struct net_device *out,
  				 struct xt_table *table);
- 
 +#ifdef CONFIG_AS_FASTPATH
 +struct firewall_asfctrl {
 +	void (*firewall_asfctrl_cb)(void);
@@ -238,14 +255,13 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/linux/netfilter_ipv4/ip_tabl
 +
 +extern void hook_firewall_asfctrl_cb(const struct firewall_asfctrl *);
 +#endif
-+
+ 
  #ifdef CONFIG_COMPAT
  #include <net/compat.h>
- 
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/linux/skbuff.h ls2-linux-rc8/include/linux/skbuff.h
---- ls2-linux-rc8-nov3-bhaskar-clean/include/linux/skbuff.h	2015-10-20 22:16:42.000000000 -0700
-+++ ls2-linux-rc8/include/linux/skbuff.h	2015-11-04 18:17:01.784750226 -0800
-@@ -539,8 +539,11 @@
+diff -Naur wo_vivid/include/linux/skbuff.h c_vivid/include/linux/skbuff.h
+--- wo_vivid/include/linux/skbuff.h	2016-02-10 11:57:26.136000000 +0530
++++ c_vivid/include/linux/skbuff.h	2016-02-10 11:19:03.608000000 +0530
+@@ -529,8 +529,11 @@
  	 * want to keep them across layers you have to do a skb_clone()
  	 * first. This is owned by whoever has the skb queued ATM.
  	 */
@@ -258,37 +274,37 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/linux/skbuff.h ls2-linux-rc8
  	unsigned long		_skb_refdst;
  	void			(*destructor)(struct sk_buff *skb);
  #ifdef CONFIG_XFRM
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/net/ip6_route.h ls2-linux-rc8/include/net/ip6_route.h
---- ls2-linux-rc8-nov3-bhaskar-clean/include/net/ip6_route.h	2015-10-20 22:16:42.000000000 -0700
-+++ ls2-linux-rc8/include/net/ip6_route.h	2015-11-04 18:19:13.005690173 -0800
-@@ -199,4 +199,8 @@
+diff -Naur wo_vivid/include/net/ip6_route.h c_vivid/include/net/ip6_route.h
+--- wo_vivid/include/net/ip6_route.h	2016-02-10 11:58:36.820000000 +0530
++++ c_vivid/include/net/ip6_route.h	2016-02-10 11:20:11.784000000 +0530
+@@ -197,5 +197,8 @@
+ {
  	return &rt->rt6i_gateway;
  }
- 
+-
 +#ifdef CONFIG_AS_FASTPATH
 +typedef void ipv6_route_flush_hook(void);
 +void ipv6_route_hook_fn_register(ipv6_route_flush_hook *flush);
 +#endif
  #endif
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/net/route.h ls2-linux-rc8/include/net/route.h
---- ls2-linux-rc8-nov3-bhaskar-clean/include/net/route.h	2015-10-20 22:16:42.000000000 -0700
-+++ ls2-linux-rc8/include/net/route.h	2015-11-04 18:19:38.235700131 -0800
-@@ -304,6 +304,11 @@
+diff -Naur wo_vivid/include/net/route.h c_vivid/include/net/route.h
+--- wo_vivid/include/net/route.h	2016-02-10 11:59:04.400000000 +0530
++++ c_vivid/include/net/route.h	2016-02-10 11:20:47.500000000 +0530
+@@ -301,6 +301,10 @@
+ 		return iif;
  	return skb->skb_iif;
  }
- 
 +#ifdef CONFIG_AS_FASTPATH
 +typedef void route_flush_hook(void);
 +void route_hook_fn_register(route_flush_hook *flush);
 +#endif
-+
+ 
  extern int sysctl_ip_default_ttl;
  
- static inline int ip4_dst_hoplimit(const struct dst_entry *dst)
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/net/xfrm.h ls2-linux-rc8/include/net/xfrm.h
---- ls2-linux-rc8-nov3-bhaskar-clean/include/net/xfrm.h	2015-10-20 22:16:42.000000000 -0700
-+++ ls2-linux-rc8/include/net/xfrm.h	2015-11-04 18:21:03.105673939 -0800
-@@ -225,7 +225,10 @@
+diff -Naur wo_vivid/include/net/xfrm.h c_vivid/include/net/xfrm.h
+--- wo_vivid/include/net/xfrm.h	2016-02-10 11:59:52.808000000 +0530
++++ c_vivid/include/net/xfrm.h	2016-02-10 11:21:11.876000000 +0530
+@@ -227,7 +227,10 @@
  
  	/* Security context */
  	struct xfrm_sec_ctx	*security;
@@ -300,7 +316,7 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/net/xfrm.h ls2-linux-rc8/inc
  	/* Private data of this transformer, format is opaque,
  	 * interpreted by xfrm_type methods. */
  	void			*data;
-@@ -538,6 +541,9 @@
+@@ -542,6 +545,9 @@
  	struct xfrm_lifetime_cfg lft;
  	struct xfrm_lifetime_cur curlft;
  	struct xfrm_policy_walk_entry walk;
@@ -310,7 +326,7 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/net/xfrm.h ls2-linux-rc8/inc
  	struct xfrm_policy_queue polq;
  	u8			type;
  	u8			action;
-@@ -1806,4 +1812,29 @@
+@@ -1810,4 +1816,29 @@
  
  	return 0;
  }
@@ -340,40 +356,42 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/include/net/xfrm.h ls2-linux-rc8/inc
 +#endif
 +
  #endif	/* _NET_XFRM_H */
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/core/dev.c ls2-linux-rc8/net/core/dev.c
---- ls2-linux-rc8-nov3-bhaskar-clean/net/core/dev.c	2015-10-20 22:16:42.000000000 -0700
-+++ ls2-linux-rc8/net/core/dev.c	2015-11-04 18:25:11.061359688 -0800
-@@ -2955,6 +2955,13 @@
- 		skb_dst_force(skb);
+diff -Naur wo_vivid/net/ipv4/fib_semantics.c c_vivid/net/ipv4/fib_semantics.c
+--- wo_vivid/net/ipv4/fib_semantics.c	2016-02-10 12:09:28.404000000 +0530
++++ c_vivid/net/ipv4/fib_semantics.c	2016-02-10 11:33:08.712000000 +0530
+@@ -218,6 +218,7 @@
+ 		kfree(fi->fib_metrics);
+ 	kfree(fi);
+ }
++//EXPORT_SYMBOL_GPL(free_fib_info_rcu);
  
- 	txq = netdev_pick_tx(dev, skb, accel_priv);
-+#if 0 /*def CONFIG_AS_FASTPATH SAI */
-+	if ((dev->features & NETIF_F_HW_QDISC) &&
-+	    likely(!netif_tx_queue_stopped(txq))) {
-+		skb = dev_hard_start_xmit(skb, dev, txq, &rc);
-+		goto out;
-+	}
-+#endif
- 	q = rcu_dereference_bh(txq->qdisc);
+ void free_fib_info(struct fib_info *fi)
+ {
+@@ -234,6 +235,7 @@
+ #endif
+ 	call_rcu(&fi->rcu, free_fib_info_rcu);
+ }
++EXPORT_SYMBOL_GPL(free_fib_info);
  
- #ifdef CONFIG_NET_CLS_ACT
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/ip_forward.c ls2-linux-rc8/net/ipv4/ip_forward.c
---- ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/ip_forward.c	2015-10-20 22:16:43.000000000 -0700
-+++ ls2-linux-rc8/net/ipv4/ip_forward.c	2015-11-04 18:36:40.827321648 -0800
-@@ -157,3 +157,6 @@
+ void fib_release_info(struct fib_info *fi)
+ {
+diff -Naur wo_vivid/net/ipv4/ip_forward.c c_vivid/net/ipv4/ip_forward.c
+--- wo_vivid/net/ipv4/ip_forward.c	2016-02-10 12:01:56.864000000 +0530
++++ c_vivid/net/ipv4/ip_forward.c	2016-02-10 11:24:44.208000000 +0530
+@@ -156,3 +156,6 @@
  	kfree_skb(skb);
  	return NET_RX_DROP;
  }
 +#ifdef CONFIG_AS_FASTPATH
 +EXPORT_SYMBOL(ip_forward);
 +#endif
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/netfilter/ip_tables.c ls2-linux-rc8/net/ipv4/netfilter/ip_tables.c
---- ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/netfilter/ip_tables.c	2015-10-20 22:16:43.000000000 -0700
-+++ ls2-linux-rc8/net/ipv4/netfilter/ip_tables.c	2015-11-04 18:34:10.905472760 -0800
-@@ -63,6 +63,19 @@
+diff -Naur wo_vivid/net/ipv4/netfilter/ip_tables.c c_vivid/net/ipv4/netfilter/ip_tables.c
+--- wo_vivid/net/ipv4/netfilter/ip_tables.c	2016-02-10 12:02:54.356000000 +0530
++++ c_vivid/net/ipv4/netfilter/ip_tables.c	2016-02-10 11:26:03.144000000 +0530
+@@ -62,6 +62,18 @@
+ #define static
  #define inline
  #endif
- 
 +#ifdef CONFIG_ASF_INGRESS_MARKER
 +marker_add_hook *marker_add_fn;
 +marker_flush_hook *marker_flush_fn;
@@ -386,14 +404,13 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/netfilter/ip_tables.c ls2-l
 +}
 +EXPORT_SYMBOL(marker_v4_hook_fn_register);
 +#endif
-+
+ 
  void *ipt_alloc_initial_table(const struct xt_table *info)
  {
- 	return xt_alloc_initial_table(ipt, IPT);
-@@ -872,6 +885,65 @@
+@@ -872,7 +884,65 @@
+ 		if (newinfo->entries[i] && newinfo->entries[i] != entry0)
  			memcpy(newinfo->entries[i], entry0, newinfo->size);
  	}
- 
 +#ifdef CONFIG_ASF_INGRESS_MARKER
 +	/* Rules has been verified now safe to offload to ASF */
 +	if (marker_add_fn && (0 == strcmp(repl->name, "mangle"))) {
@@ -441,7 +458,7 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/netfilter/ip_tables.c ls2-l
 +			rules[num].src_port = *sport;
 +			rules[num].dst_port = *dport;
 +			rules[num].uciDscp = (t->data[0] << 2);
-+
+ 
 +			num++;
 +		}
 +		if (num > 0) {
@@ -456,10 +473,10 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/netfilter/ip_tables.c ls2-l
  	return ret;
  }
  
-@@ -1172,6 +1244,16 @@
+@@ -1172,6 +1242,16 @@
+ 
  	return ret;
  }
- 
 +#ifdef CONFIG_AS_FASTPATH
 +void (*pfnfirewall_asfctrl)(void);
 +
@@ -468,12 +485,12 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/netfilter/ip_tables.c ls2-l
 +	pfnfirewall_asfctrl = fwasfctrl->firewall_asfctrl_cb;
 +}
 +EXPORT_SYMBOL(hook_firewall_asfctrl_cb);
++EXPORT_SYMBOL(pfnfirewall_asfctrl);
 +#endif
-+
+ 
  static int
  __do_replace(struct net *net, const char *name, unsigned int valid_hooks,
- 	     struct xt_table_info *newinfo, unsigned int num_counters,
-@@ -1236,6 +1318,13 @@
+@@ -1237,6 +1317,13 @@
  	}
  	vfree(counters);
  	xt_table_unlock(t);
@@ -487,21 +504,20 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/netfilter/ip_tables.c ls2-l
  	return ret;
  
   put_module:
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/route.c ls2-linux-rc8/net/ipv4/route.c
---- ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/route.c	2015-10-20 22:16:43.000000000 -0700
-+++ ls2-linux-rc8/net/ipv4/route.c	2015-11-04 18:39:00.984408686 -0800
-@@ -187,6 +187,10 @@
+diff -Naur wo_vivid/net/ipv4/route.c c_vivid/net/ipv4/route.c
+--- wo_vivid/net/ipv4/route.c	2016-02-10 12:03:26.304000000 +0530
++++ c_vivid/net/ipv4/route.c	2016-02-10 11:26:37.344000000 +0530
+@@ -187,6 +187,9 @@
+ 	ECN_OR_COST(INTERACTIVE_BULK)
  };
  EXPORT_SYMBOL(ip_tos2prio);
- 
 +#ifdef CONFIG_AS_FASTPATH
 +static route_flush_hook *route_flush_fn;
 +#endif
-+
+ 
  static DEFINE_PER_CPU(struct rt_cache_stat, rt_cache_stat);
  #define RT_CACHE_STAT_INC(field) raw_cpu_inc(rt_cache_stat.field)
- 
-@@ -433,6 +437,10 @@
+@@ -434,6 +437,10 @@
  void rt_cache_flush(struct net *net)
  {
  	rt_genid_bump_ipv4(net);
@@ -512,10 +528,10 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/route.c ls2-linux-rc8/net/i
  }
  
  static struct neighbour *ipv4_neigh_lookup(const struct dst_entry *dst,
-@@ -2195,6 +2203,14 @@
+@@ -2182,6 +2189,13 @@
+ 	return rth;
  }
  EXPORT_SYMBOL_GPL(__ip_route_output_key);
- 
 +#ifdef CONFIG_AS_FASTPATH
 +void route_hook_fn_register(route_flush_hook *flush)
 +{
@@ -523,17 +539,16 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv4/route.c ls2-linux-rc8/net/i
 +}
 +EXPORT_SYMBOL(route_hook_fn_register);
 +#endif
-+
+ 
  static struct dst_entry *ipv4_blackhole_dst_check(struct dst_entry *dst, u32 cookie)
  {
- 	return NULL;
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv6/netfilter/ip6_tables.c ls2-linux-rc8/net/ipv6/netfilter/ip6_tables.c
---- ls2-linux-rc8-nov3-bhaskar-clean/net/ipv6/netfilter/ip6_tables.c	2015-10-20 22:16:43.000000000 -0700
-+++ ls2-linux-rc8/net/ipv6/netfilter/ip6_tables.c	2015-11-04 18:41:03.518496921 -0800
-@@ -885,6 +885,70 @@
+diff -Naur wo_vivid/net/ipv6/netfilter/ip6_tables.c c_vivid/net/ipv6/netfilter/ip6_tables.c
+--- wo_vivid/net/ipv6/netfilter/ip6_tables.c	2016-02-10 12:04:50.412000000 +0530
++++ c_vivid/net/ipv6/netfilter/ip6_tables.c	2016-02-10 11:28:20.492000000 +0530
+@@ -882,7 +882,70 @@
+ 		if (newinfo->entries[i] && newinfo->entries[i] != entry0)
  			memcpy(newinfo->entries[i], entry0, newinfo->size);
  	}
- 
 +#ifdef CONFIG_ASF_INGRESS_MARKER
 +	/* Rules has been verified now safe to offload to ASF */
 +	if (marker_v6_add_fn && (0 == strcmp(repl->name, "mangle"))) {
@@ -586,7 +601,7 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv6/netfilter/ip6_tables.c ls2-
 +			rules[num].src_port = *sport;
 +			rules[num].dst_port = *dport;
 +			rules[num].uciDscp = (t->data[0] << 2);
-+
+ 
 +			num++;
 +		}
 +		if (num > 0) {
@@ -601,18 +616,17 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv6/netfilter/ip6_tables.c ls2-
  	return ret;
  }
  
-@@ -1185,6 +1249,10 @@
+@@ -1182,6 +1245,9 @@
+ 
  	return ret;
  }
- 
 +#ifdef CONFIG_AS_FASTPATH
 +extern void (*pfnfirewall_asfctrl)(void);
 +#endif
-+
+ 
  static int
  __do_replace(struct net *net, const char *name, unsigned int valid_hooks,
- 	     struct xt_table_info *newinfo, unsigned int num_counters,
-@@ -1249,6 +1317,13 @@
+@@ -1247,6 +1313,13 @@
  	}
  	vfree(counters);
  	xt_table_unlock(t);
@@ -626,33 +640,41 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv6/netfilter/ip6_tables.c ls2-
  	return ret;
  
   put_module:
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv6/route.c ls2-linux-rc8/net/ipv6/route.c
---- ls2-linux-rc8-nov3-bhaskar-clean/net/ipv6/route.c	2015-10-20 22:16:43.000000000 -0700
-+++ ls2-linux-rc8/net/ipv6/route.c	2015-11-04 18:42:05.911846211 -0800
-@@ -65,6 +65,10 @@
+diff -Naur wo_vivid/net/ipv6/route.c c_vivid/net/ipv6/route.c
+--- wo_vivid/net/ipv6/route.c	2016-02-10 12:05:22.576000000 +0530
++++ c_vivid/net/ipv6/route.c	2016-02-10 11:29:02.936000000 +0530
+@@ -64,6 +64,9 @@
+ #ifdef CONFIG_SYSCTL
  #include <linux/sysctl.h>
  #endif
- 
 +#ifdef CONFIG_AS_FASTPATH
 +static ipv6_route_flush_hook *ipv6_route_flush_fn;
 +#endif
-+
+ 
  enum rt6_nud_state {
  	RT6_NUD_FAIL_HARD = -3,
- 	RT6_NUD_FAIL_PROBE = -2,
-@@ -861,6 +865,11 @@
- 	err = fib6_add(&table->tb6_root, rt, info, mxc);
+@@ -862,6 +865,10 @@
+ 	write_lock_bh(&table->tb6_lock);
+ 	err = fib6_add(&table->tb6_root, rt, info, mx, mx_len);
  	write_unlock_bh(&table->tb6_lock);
- 
 +#ifdef CONFIG_AS_FASTPATH
 +	if ((!err) && ipv6_route_flush_fn)
 +		ipv6_route_flush_fn();
 +#endif
-+
+ 
  	return err;
  }
+@@ -1025,6 +1032,9 @@
  
-@@ -1755,6 +1764,12 @@
+ 	skb_dst_set(skb, ip6_route_input_lookup(net, skb->dev, &fl6, flags));
+ }
++EXPORT_SYMBOL_GPL(ip6_route_input);
++
++
+ 
+ static struct rt6_info *ip6_pol_route_output(struct net *net, struct fib6_table *table,
+ 					     struct flowi6 *fl6, int flags)
+@@ -1708,6 +1718,12 @@
  
  out:
  	ip6_rt_put(rt);
@@ -665,11 +687,10 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv6/route.c ls2-linux-rc8/net/i
  	return err;
  }
  
-@@ -3309,3 +3324,11 @@
- 	dst_entries_destroy(&ip6_dst_blackhole_ops);
- 	kmem_cache_destroy(ip6_dst_ops_template.kmem_cachep);
+@@ -3233,6 +3249,13 @@
+ 	goto out;
  }
-+
+ 
 +#ifdef CONFIG_AS_FASTPATH
 +void ipv6_route_hook_fn_register(ipv6_route_flush_hook *flush)
 +{
@@ -677,9 +698,12 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/ipv6/route.c ls2-linux-rc8/net/i
 +}
 +EXPORT_SYMBOL(ipv6_route_hook_fn_register);
 +#endif
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/netfilter/nf_conntrack_proto_tcp.c ls2-linux-rc8/net/netfilter/nf_conntrack_proto_tcp.c
---- ls2-linux-rc8-nov3-bhaskar-clean/net/netfilter/nf_conntrack_proto_tcp.c	2015-10-20 22:16:43.000000000 -0700
-+++ ls2-linux-rc8/net/netfilter/nf_conntrack_proto_tcp.c	2015-11-04 18:44:14.179121923 -0800
+ void ip6_route_cleanup(void)
+ {
+ 	unregister_netdevice_notifier(&ip6_route_dev_notifier);
+diff -Naur wo_vivid/net/netfilter/nf_conntrack_proto_tcp.c c_vivid/net/netfilter/nf_conntrack_proto_tcp.c
+--- wo_vivid/net/netfilter/nf_conntrack_proto_tcp.c	2016-02-10 12:06:36.140000000 +0530
++++ c_vivid/net/netfilter/nf_conntrack_proto_tcp.c	2016-02-10 11:30:26.796000000 +0530
 @@ -706,6 +706,48 @@
  				state->retrans = 0;
  			}
@@ -729,13 +753,13 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/netfilter/nf_conntrack_proto_tcp
  		res = true;
  	} else {
  		res = false;
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_input.c ls2-linux-rc8/net/xfrm/xfrm_input.c
---- ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_input.c	2015-10-20 22:16:44.000000000 -0700
-+++ ls2-linux-rc8/net/xfrm/xfrm_input.c	2015-11-04 18:28:30.314236444 -0800
-@@ -269,6 +269,18 @@
+diff -Naur wo_vivid/net/xfrm/xfrm_input.c c_vivid/net/xfrm/xfrm_input.c
+--- wo_vivid/net/xfrm/xfrm_input.c	2016-02-10 12:08:17.312000000 +0530
++++ c_vivid/net/xfrm/xfrm_input.c	2016-02-10 11:31:29.368000000 +0530
+@@ -258,6 +258,17 @@
+ 			XFRM_INC_STATS(net, LINUX_MIB_XFRMINSTATEMISMATCH);
  			goto drop_unlock;
  		}
- 
 +#ifdef CONFIG_AS_FASTPATH
 +		if (!x->asf_sa_cookie && asf_cb_fns.ipsec_dec_hook)
 +			asf_cb_fns.ipsec_dec_hook(NULL, x, NULL, skb->skb_iif);
@@ -747,17 +771,16 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_input.c ls2-linux-rc8/
 +		}
 +		spin_lock(&x->lock);
 +#endif
-+
+ 
  		if (x->repl->check(x, skb, seq)) {
  			XFRM_INC_STATS(net, LINUX_MIB_XFRMINSTATESEQERROR);
- 			goto drop_unlock;
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_output.c ls2-linux-rc8/net/xfrm/xfrm_output.c
---- ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_output.c	2015-10-20 22:16:44.000000000 -0700
-+++ ls2-linux-rc8/net/xfrm/xfrm_output.c	2015-11-04 18:29:06.910497020 -0800
-@@ -54,6 +54,17 @@
+diff -Naur wo_vivid/net/xfrm/xfrm_output.c c_vivid/net/xfrm/xfrm_output.c
+--- wo_vivid/net/xfrm/xfrm_output.c	2016-02-10 12:08:23.808000000 +0530
++++ c_vivid/net/xfrm/xfrm_output.c	2016-02-10 11:31:42.184000000 +0530
+@@ -53,6 +53,16 @@
+ 			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTERROR);
  			goto error_nolock;
  		}
- 
 +#ifdef CONFIG_AS_FASTPATH
 +		if (!x->asf_sa_cookie && asf_cb_fns.ipsec_enc_hook)
 +			asf_cb_fns.ipsec_enc_hook(NULL, x, NULL, skb->skb_iif);
@@ -768,17 +791,16 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_output.c ls2-linux-rc8
 +				goto out;
 +		}
 +#endif
-+
+ 
  		err = x->outer_mode->output(x, skb);
  		if (err) {
- 			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTSTATEMODEERROR);
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_policy.c ls2-linux-rc8/net/xfrm/xfrm_policy.c
---- ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_policy.c	2015-10-20 22:16:44.000000000 -0700
-+++ ls2-linux-rc8/net/xfrm/xfrm_policy.c	2015-11-04 18:31:13.161442284 -0800
-@@ -59,6 +59,33 @@
+diff -Naur wo_vivid/net/xfrm/xfrm_policy.c c_vivid/net/xfrm/xfrm_policy.c
+--- wo_vivid/net/xfrm/xfrm_policy.c	2016-02-10 12:08:30.100000000 +0530
++++ c_vivid/net/xfrm/xfrm_policy.c	2016-02-10 11:31:57.488000000 +0530
+@@ -58,6 +58,32 @@
+ static void __xfrm_policy_link(struct xfrm_policy *pol, int dir);
  static struct xfrm_policy *__xfrm_policy_unlink(struct xfrm_policy *pol,
  						int dir);
- 
 +#ifdef CONFIG_AS_FASTPATH
 +struct asf_ipsec_callbackfn_s	asf_cb_fns = {0};
 +
@@ -805,11 +827,10 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_policy.c ls2-linux-rc8
 +}
 +EXPORT_SYMBOL(unregister_ipsec_offload_hook);
 +#endif	/* CONFIG_AS_FASTPATH */
-+
+ 
  static inline bool
  __xfrm4_selector_match(const struct xfrm_selector *sel, const struct flowi *fl)
- {
-@@ -794,6 +821,9 @@
+@@ -794,6 +820,9 @@
  		__xfrm_policy_unlink(delpol, dir);
  	}
  	policy->index = delpol ? delpol->index : xfrm_gen_index(net, dir, policy->index);
@@ -819,7 +840,16 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_policy.c ls2-linux-rc8
  	hlist_add_head(&policy->byidx, net->xfrm.policy_byidx+idx_hash(net, policy->index));
  	policy->curlft.add_time = get_seconds();
  	policy->curlft.use_time = 0;
-@@ -1352,6 +1382,11 @@
+@@ -1153,6 +1182,8 @@
+ #endif
+ 	return xfrm_policy_lookup_bytype(net, XFRM_POLICY_TYPE_MAIN, fl, family, dir);
+ }
++EXPORT_SYMBOL(__xfrm_policy_lookup);
++
+ 
+ static int flow_to_policy_dir(int dir)
+ {
+@@ -1352,6 +1383,11 @@
  		newp->xfrm_nr = old->xfrm_nr;
  		newp->index = old->index;
  		newp->type = old->type;
@@ -831,13 +861,13 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_policy.c ls2-linux-rc8
  		memcpy(newp->xfrm_vec, old->xfrm_vec,
  		       newp->xfrm_nr*sizeof(struct xfrm_tmpl));
  		write_lock_bh(&net->xfrm.xfrm_policy_lock);
-diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_state.c ls2-linux-rc8/net/xfrm/xfrm_state.c
---- ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_state.c	2015-10-20 22:16:44.000000000 -0700
-+++ ls2-linux-rc8/net/xfrm/xfrm_state.c	2015-11-04 18:29:45.210506573 -0800
-@@ -1693,6 +1693,69 @@
+diff -Naur wo_vivid/net/xfrm/xfrm_state.c c_vivid/net/xfrm/xfrm_state.c
+--- wo_vivid/net/xfrm/xfrm_state.c	2016-02-10 12:08:41.308000000 +0530
++++ c_vivid/net/xfrm/xfrm_state.c	2016-02-10 12:16:11.824000000 +0530
+@@ -1692,7 +1692,75 @@
+ 
  	spin_unlock(&x->lock);
  }
- 
 +#ifdef CONFIG_AS_FASTPATH
 +struct xfrm_policy *xfrm_state_policy_mapping(struct xfrm_state *xfrm)
 +{
@@ -849,19 +879,20 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_state.c ls2-linux-rc8/
 +	unsigned int dir;
 +
 +	if (!list_policy_head) {
-+		printk(KERN_INFO "No Security Policies in the system\n");
 +		return matched_pol;
 +	}
++	
 +	x = list_first_entry(list_policy_head,
 +				struct xfrm_policy_walk_entry, all);
 +	if (!x) {
-+		printk(KERN_INFO "Security Policies list is empty\n");
-+		return matched_pol;
++				return matched_pol;
 +	}
 +	if (xfrm->props.family == AF_INET) {
-+		list_for_each_entry_from(x, list_policy_head, all) {
++			list_for_each_entry_from(x, list_policy_head, all) {
 +			if (x->dead)
++			{
 +				continue;
++			}
 +			xp = container_of(x, struct xfrm_policy, walk);
 +			tmpl = &xp->xfrm_vec[0];
 +			dir = xfrm_policy_id2dir(xp->index);
@@ -878,7 +909,9 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_state.c ls2-linux-rc8/
 +	} else if (xfrm->props.family == AF_INET6) {
 +		list_for_each_entry_from(x, list_policy_head, all) {
 +			if (x->dead)
++			{
 +				continue;
++			}
 +			xp = container_of(x, struct xfrm_policy, walk);
 +			tmpl = &xp->xfrm_vec[0];
 +			dir = xfrm_policy_id2dir(xp->index);
@@ -894,9 +927,12 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_state.c ls2-linux-rc8/
 +					break;
 +			}
 +		}
-+	} else
++	}
++	 else
++	{
 +		return NULL;
-+
++	}
+ 
 +	return matched_pol;
 +}
 +EXPORT_SYMBOL(xfrm_state_policy_mapping);
@@ -904,3 +940,31 @@ diff -Naur ls2-linux-rc8-nov3-bhaskar-clean/net/xfrm/xfrm_state.c ls2-linux-rc8/
  static LIST_HEAD(xfrm_km_list);
  
  void km_policy_notify(struct xfrm_policy *xp, int dir, const struct km_event *c)
+@@ -1700,9 +1768,12 @@
+ 	struct xfrm_mgr *km;
+ 
+ 	rcu_read_lock();
+-	list_for_each_entry_rcu(km, &xfrm_km_list, list)
++	list_for_each_entry_rcu(km, &xfrm_km_list, list) {
+ 		if (km->notify_policy)
++		{
+ 			km->notify_policy(xp, dir, c);
++		}
++	}
+ 	rcu_read_unlock();
+ }
+ 
+@@ -1710,9 +1781,12 @@
+ {
+ 	struct xfrm_mgr *km;
+ 	rcu_read_lock();
+-	list_for_each_entry_rcu(km, &xfrm_km_list, list)
++	list_for_each_entry_rcu(km, &xfrm_km_list, list) {
+ 		if (km->notify)
++		{
+ 			km->notify(x, c);
++		}
++	}
+ 	rcu_read_unlock();
+ }
+ 

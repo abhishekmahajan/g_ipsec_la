@@ -107,7 +107,7 @@ static void asf_ipv4_rt_blackhole_redirect(struct dst_entry *dst, struct sock *s
 }
 
 static u32 *asf_ipv4_rt_blackhole_cow_metrics(struct dst_entry *dst,
-					  unsigned long old)
+					  ULONG old)
 {
 	return NULL;
 }

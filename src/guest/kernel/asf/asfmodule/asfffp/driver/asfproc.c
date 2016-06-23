@@ -266,7 +266,7 @@ EXPORT_SYMBOL(asf_dir);
 
 
 #define GSTATS_SUM(a) (total.ul##a += gstats->ul##a)
-#define GSTATS_TOTAL(a) (unsigned long) total.ul##a
+#define GSTATS_TOTAL(a) (ULONG) total.ul##a
 
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
@@ -617,7 +617,7 @@ static int display_asf_proc_xtra_global_stats_open(struct inode *inode, struct f
 
 
 #define VSTATS_SUM(a) (total.ul##a += vstats->ul##a)
-#define VSTATS_TOTAL(a) (unsigned long)total.ul##a
+#define VSTATS_TOTAL(a) (ULONG)total.ul##a
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 static int display_asf_proc_vsg_stats(struct seq_file *m, void *v)
@@ -852,7 +852,7 @@ static int display_asf_proc_flow_stats(char *page, char **start,
 	}
 	if ((p-buf) > (200*(ffp_debug_show_count+2))) {
 		printk("Ooops! buffer is overwriten! allocated %u and required %lu to display %d items\n",
-		       200*(ffp_debug_show_count+2), (unsigned long)(p-buf), ffp_debug_show_count);
+		       200*(ffp_debug_show_count+2), (ULONG)(p-buf), ffp_debug_show_count);
 	}
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
@@ -955,7 +955,7 @@ static int display_asf_proc_flow_ipv6_stats(char *page, char **start,
 	}
 	if ((p-buf) > (200*(ffp_debug_show_count+2))) {
 		printk(KERN_INFO"Ooops! buffer is overwriten! allocated %u and required %lu to display %d items\n",
-		       200*(ffp_debug_show_count+2), (unsigned long)(p-buf), ffp_debug_show_count);
+		       200*(ffp_debug_show_count+2), (ULONG)(p-buf), ffp_debug_show_count);
 	}
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 	print_bigbuf(m, buf);
@@ -993,7 +993,7 @@ static int display_asf_proc_flow_debug(char *page, char **start,
 	ffp_flow_t      *head, *flow;
 	char	    *buf, *p;
 	unsigned int    disp_cnt = 0, display = 0;
-	unsigned long curTime = jiffies, last_in, ulIdleTime;
+	ULONG curTime = jiffies, last_in, ulIdleTime;
 
 	buf = (char *)  kmalloc(300*(ffp_debug_show_count+2), GFP_KERNEL);
 	if (!buf) {

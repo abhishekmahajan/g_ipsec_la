@@ -1,5 +1,8 @@
+include $(KERNEL_PATH)/.config
+#include /home/qemu/g_ipsec_la/src/guest/kernel/asf/asfmodule/asfconfig.mk
 MODULE_NAME = virtio_ipsec
 
+#change the file(virtio_ipsec.c) name. 
 SRC := virtio_ipsec.c ../../common/ipsec/virtio_ipsec_msg.c
 $(MODULE_NAME)-objs = $(SRC:.c=.o)
 obj-m := $(MODULE_NAME).o

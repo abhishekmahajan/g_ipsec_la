@@ -92,7 +92,7 @@ asf_max_val_t fwd_max_flow6s = ASF_FWD_MAX_FLOWS;
 int asf_fwd6_inac_divisor = 1;
 int fwd6_hash_buckets = ASF_FFP_MAX_HASH_BKT;
 fwd6_bucket_t *fwd_flow6_cache;
-unsigned long asf_fwd6_hash_init_value;
+ULONG asf_fwd6_hash_init_value;
 static unsigned int  fwd_flow6_pool_id = -1;
 static unsigned int  fwd6_inac_tmr_pool_id = -1;
 int fwd6_max_flows = ASF_FWD_MAX_FLOWS;
@@ -145,16 +145,16 @@ static void fwd_flow6_free_rcu(struct rcu_head *rcu)
 #endif
 
 static __u32 ipv6_rule_salt __read_mostly;
-static inline unsigned long _fwd6_compute_hash(
+static inline ULONG _fwd6_compute_hash(
 				ASF_uint32_t ulVsgId,
 				ASF_IPv6Addr_t *ip6SrcIp,
 				ASF_IPv6Addr_t *ip6DestIp,
 				ASF_uint32_t  flowlabel,
-				unsigned long initval)
+				ULONG initval)
 {
 	 
-	unsigned long ulSrcIp = 0;
-	unsigned long ulDestIp = 0;
+	ULONG ulSrcIp = 0;
+	ULONG ulDestIp = 0;
 
 	ulSrcIp += ip6SrcIp->s6_addr32[0];
 	ulSrcIp += ip6SrcIp->s6_addr32[1];
@@ -385,7 +385,7 @@ ASF_uint32_t ASFFWD6_Process(
     ASF_void_t *freeArg)
 {
 	struct ipv6hdr		*ip6h;
-	unsigned long		ulHashVal;
+	ULONG		ulHashVal;
 	struct sk_buff		*skb;
 	ASFNetDevEntry_t	*anDev;
 	unsigned char		nexthdr;

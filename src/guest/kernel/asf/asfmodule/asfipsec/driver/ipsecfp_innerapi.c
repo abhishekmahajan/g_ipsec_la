@@ -148,7 +148,7 @@ static int secfp_InitOutSATable(void)
 	ptrIArry_nd_t *pNode;
 #ifdef SECFP_USE_L2SRAM
 	dma_addr_t addr;
-	addr = (unsigned long)(SECFP_SRAM_BASE + SECFP_SRAM_SIZE);
+	addr = (ULONG)(SECFP_SRAM_BASE + SECFP_SRAM_SIZE);
 	pNode = ioremap_flags(addr,
 			(sizeof(ptrIArry_nd_t)*ulMaxSupportedIPSecSAs_g),
 			PAGE_KERNEL | _PAGE_COHERENT);
@@ -237,7 +237,7 @@ static int secfp_InitInSATable(void)
 {
 #ifdef SECFP_USE_L2SRAM
 	dma_addr_t addr;
-	addr = (unsigned long)(SECFP_SRAM_BASE + SECFP_SRAM_SIZE +
+	addr = (ULONG)(SECFP_SRAM_BASE + SECFP_SRAM_SIZE +
 			(sizeof(ptrIArry_nd_t) * usMaxInSAHashTaleSize_g));
 	secFP_SPIHashTable = (inSAList_t *) ioremap_flags(addr,
 				(sizeof(inSA_t *) * usMaxInSAHashTaleSize_g),
@@ -1411,7 +1411,7 @@ inSA_t *secfp_findInv4SA(unsigned int ulVSGId,
 #ifdef ASF_IPV6_FP_SUPPORT
 inSA_t *secfp_findInv6SA(unsigned int ulVSGId,
 		unsigned char ucProto,
-		unsigned long int ulSPI,
+		ULONG ulSPI,
 		unsigned int *daddr,
 		unsigned int *pHashVal)
 {
@@ -1449,7 +1449,7 @@ inSA_t *secfp_findInv6SA(unsigned int ulVSGId,
 
 inSA_t *secfp_findInSA(unsigned int ulVSGId,
 		unsigned char ucProto,
-		unsigned long int ulSPI,
+		ULONG ulSPI,
 		ASF_IPAddr_t daddr, unsigned int *pHashVal)
 {
 #ifdef ASF_IPV6_FP_SUPPORT
@@ -3508,7 +3508,7 @@ unsigned int secfp_CreateInSA(
 }
 
 /* Setting DPD in IN SPD function */
-unsigned int secfp_SetDPD(unsigned long int ulVSGId,
+unsigned int secfp_SetDPD(ULONG ulVSGId,
 				ASFIPSecRuntimeSetDPDArgs_t *pSetDPD)
 {
 	SPDInContainer_t *pContainer;
@@ -3533,7 +3533,7 @@ unsigned int secfp_SetDPD(unsigned long int ulVSGId,
 }
 
 /* In SA modification */
-unsigned int secfp_ModifyInSA(unsigned long int ulVSGId,
+unsigned int secfp_ModifyInSA(ULONG ulVSGId,
 				ASFIPSecRuntimeModInSAArgs_t *pModSA)
 {
 	unsigned int hashVal = usMaxInSAHashTaleSize_g;

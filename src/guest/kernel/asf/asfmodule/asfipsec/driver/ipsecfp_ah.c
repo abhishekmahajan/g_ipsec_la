@@ -1187,7 +1187,7 @@ void secfp_outAHComplete(struct device *dev,
 #endif
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM)
 	int cpu;
-	unsigned long uPacket = 0;
+	ULONG uPacket = 0;
 	ASF_IPSecTunEndAddr_t TunAddress;
 	unsigned short	bl2blobRefresh = 0;
 #endif
@@ -1406,7 +1406,7 @@ ret_pkt:
 		ASF_boolean_t bExpiry = ASF_FALSE;
 
 		if (pSA->SAParams.hardKbyteLimit) {
-			unsigned long ulKBytes = 0;
+			ULONG ulKBytes = 0;
 			for_each_possible_cpu(cpu) {
 				ulKBytes += pSA->ulBytes[cpu];
 			}

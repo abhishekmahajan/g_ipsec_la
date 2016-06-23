@@ -446,10 +446,10 @@ typedef struct SAParams_s {
 	/* Nonce:4 bytes, followed by 8 bytes IV + 4 bytes counter */
 	ASF_IPSec_Nat_Info_t IPsecNatInfo;
 
-	unsigned long softPacketLimit;
-	unsigned long hardPacketLimit;
-	unsigned long softKbyteLimit;
-	unsigned long hardKbyteLimit;
+	ULONG softPacketLimit;
+	ULONG hardPacketLimit;
+	ULONG softKbyteLimit;
+	ULONG hardKbyteLimit;
 } SAParams_t;
 
 
@@ -525,8 +525,8 @@ typedef struct inSA_s {
 					 if AH, ICV length */
 	unsigned int ulRcvMTU;
 	unsigned int ulTunnelId;
-	unsigned long ulPkts[NR_CPUS];
-	unsigned long ulBytes[NR_CPUS];
+	ULONG ulPkts[NR_CPUS];
+	ULONG ulBytes[NR_CPUS];
 	AsfSPDPolicyPPStats_t	PolicyPPStats[NR_CPUS];
 	AsfSPDPolPPStats_t	 PPStats;
 	/* For Gateway Adaptation purposes */
@@ -739,8 +739,8 @@ typedef struct outSA_s {
 	unsigned int ulCompleteOverHead;
 	unsigned int ulXmitHdrLen;
 	unsigned int ulInnerPathMTU;
-	unsigned long ulPkts[NR_CPUS];
-	unsigned long ulBytes[NR_CPUS];
+	ULONG ulPkts[NR_CPUS];
+	ULONG ulBytes[NR_CPUS];
 	AsfSPDPolicyPPStats_t	PolicyPPStats[NR_CPUS];
 	AsfSPDPolPPStats_t	PPStats;
 	struct net_device *odev;
@@ -891,7 +891,7 @@ int secfp_unregister_proc(void);
 
 inSA_t *secfp_findInSA(unsigned int ulVSGId,
 			unsigned char ucProto,
-			unsigned long int ulSPI,
+			ULONG ulSPI,
 			ASF_IPAddr_t daddr,
 			unsigned int *pHashVal);
 
@@ -936,13 +936,13 @@ unsigned int secfp_DeleteInSA(unsigned int	ulVSGId,
 				unsigned char	ucProtocol,
 				unsigned int	ulSPI);
 
-unsigned int secfp_ModifyOutSA(unsigned int long ulVSGId,
+unsigned int secfp_ModifyOutSA(ULONG ulVSGId,
 				ASFIPSecRuntimeModOutSAArgs_t *pModSA);
 
-unsigned int secfp_ModifyInSA(unsigned int long ulVSGId,
+unsigned int secfp_ModifyInSA(ULONG ulVSGId,
 				ASFIPSecRuntimeModInSAArgs_t *pModSA);
 
-unsigned int secfp_SetDPD(unsigned int long ulVSGId,
+unsigned int secfp_SetDPD(ULONG ulVSGId,
 				ASFIPSecRuntimeSetDPDArgs_t *pSetDPD);
 
 unsigned int secfp_createOutSA(
@@ -1003,7 +1003,7 @@ extern outSA_t *secfp_findOutSA(
 
 extern inSA_t *secfp_findInv6SA(unsigned int ulVSGId,
 		unsigned char ucProto,
-		unsigned long int ulSPI,
+		ULONG ulSPI,
 		unsigned int *daddr,
 		unsigned int *pHashVal);
 

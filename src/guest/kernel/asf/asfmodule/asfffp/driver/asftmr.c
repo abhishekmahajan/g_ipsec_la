@@ -66,7 +66,7 @@
 #define ASF_TMR_NEXT_FEW_BUCKETS 4
 
 extern ASFFFPGlobalStats_t *asf_gstats;
-static void asfTimerProc(unsigned long data);
+static void asfTimerProc(ULONG data);
 
 struct asfTmrAppInstanceInfo_s {
 	asfTmrCbFn pFn;
@@ -657,7 +657,7 @@ void asfTimerDelete(struct rcu_head *pData)
  * restart its timer by calling add_timer
  */
 unsigned int ulLastTimerExpiry[NR_CPUS];
-static void asfTimerProc(unsigned long data)
+static void asfTimerProc(ULONG data)
 {
 	unsigned short int ulAppId = ((unsigned int)(data) & 0xffff0000) >> 16;
 	unsigned short int ulInstanceId = (unsigned int)data & 0xffff;
@@ -665,7 +665,7 @@ static void asfTimerProc(unsigned long data)
 		&(pAsfTmrWheelInstances[ulAppId].pWheel[ulInstanceId]);
 	struct asfTmrWheelPerCore_s *pTmrWheel;
 	struct asfTmrRQ_s *pRq;
-	unsigned long old_state, new_state;
+	ULONG old_state, new_state;
 	asfTmr_t *pNextTmr, *ptmr;
 	int ii;
 

@@ -56,7 +56,7 @@ ffp_bucket_t *ffp_ipv6_flow_table;
 
 static unsigned int  ffp_ipv6_flow_pool_id = -1;
 
-unsigned long asf_ffp_ipv6_hash_init_value;
+ULONG asf_ffp_ipv6_hash_init_value;
 EXPORT_SYMBOL(asf_ffp_ipv6_hash_init_value);
 
 
@@ -107,13 +107,13 @@ void ffp_ipv6_flow_free(ffp_flow_t *flow)
 
 static inline ffp_flow_t *asf_ffp_ipv6_flow_lookup_in_bkt(
 				ASF_IPv6Addr_t *sip, ASF_IPv6Addr_t *dip,
-				unsigned long ports, unsigned char protocol,
-				unsigned long vsg, unsigned long szone,
+				ULONG ports, unsigned char protocol,
+				ULONG vsg, ULONG szone,
 				ffp_flow_t *pHead)
 {
 	ffp_flow_t      *flow;
 #ifdef ASF_DEBUG
-	unsigned long ulCount = 0;
+	ULONG ulCount = 0;
 #endif
 
 	for (flow = pHead->pNext; flow != pHead; flow = flow->pNext) {
@@ -140,8 +140,8 @@ static inline ffp_flow_t *asf_ffp_ipv6_flow_lookup_in_bkt(
 }
 
 ffp_flow_t *asf_ffp_ipv6_flow_lookup_in_bkt_ex(ASFFFPFlowTuple_t *tuple,
-				unsigned long ulVsgId,
-				unsigned long ulZoneId,
+				ULONG ulVsgId,
+				ULONG ulZoneId,
 				ffp_flow_t *pHead)
 {
 	return asf_ffp_ipv6_flow_lookup_in_bkt((ASF_IPv6Addr_t *)(tuple->ipv6SrcIp),
@@ -157,11 +157,11 @@ ffp_flow_t *asf_ffp_ipv6_flow_lookup_in_bkt_ex(ASFFFPFlowTuple_t *tuple,
  */
 static inline ffp_flow_t  *asf_ffp_ipv6_flow_lookup(
 					ASF_IPv6Addr_t *sip, ASF_IPv6Addr_t *dip, unsigned int ports,
-					unsigned long vsg, unsigned long szone, unsigned char protocol, unsigned long *pHashVal)
+					ULONG vsg, ULONG szone, unsigned char protocol, ULONG *pHashVal)
 {
 	ffp_flow_t *flow, *pHead;
 #ifdef ASF_DEBUG
-	unsigned long ulCount = 0;
+	ULONG ulCount = 0;
 #endif
 
 	asf_debug("szone = %d\n", szone);
@@ -198,9 +198,9 @@ static inline ffp_flow_t  *asf_ffp_ipv6_flow_lookup(
 }
 
 ffp_flow_t *asf_ffp_ipv6_flow_lookup_by_tuple(ASFFFPFlowTuple_t *tpl,
-			unsigned long ulVsgId,
-			unsigned long ulZoneId,
-			unsigned long *pHashVal)
+			ULONG ulVsgId,
+			ULONG ulZoneId,
+			ULONG *pHashVal)
 {
 	return asf_ffp_ipv6_flow_lookup((ASF_IPv6Addr_t *)(tpl->ipv6SrcIp),
 				(ASF_IPv6Addr_t *)(tpl->ipv6DestIp),
@@ -214,7 +214,7 @@ void ffp_ipv6_flow_free_rcu(struct rcu_head *rcu)
 	ffp_ipv6_flow_free(flow);
 }
 
-static inline void asfFfpSendLogEx(ffp_flow_t *flow, unsigned long ulMsgId, ASF_uchar8_t *aMsg, unsigned long ulHashVal)
+static inline void asfFfpSendLogEx(ffp_flow_t *flow, ULONG ulMsgId, ASF_uchar8_t *aMsg, ULONG ulHashVal)
 {
 	if (ffpCbFns.pFnAuditLog) {
 		ASFLogInfo_t        li;
@@ -233,7 +233,7 @@ static inline void asfFfpSendLogEx(ffp_flow_t *flow, unsigned long ulMsgId, ASF_
 	}
 }
 
-static inline void asfFfpSendLog(ffp_flow_t *flow, unsigned long ulMsgId, unsigned long ulHashVal)
+static inline void asfFfpSendLog(ffp_flow_t *flow, ULONG ulMsgId, ULONG ulHashVal)
 {
 	return asfFfpSendLogEx(flow, ulMsgId, (ASF_uchar8_t *) "", ulHashVal);
 }
@@ -244,7 +244,7 @@ ASF_uint32_t ASFFFPIPv6ProcessAndSendFD(
 {
 	struct ipv6hdr		*ip6h;
 	ffp_flow_t		*flow;
-	unsigned long		ulHashVal = abuf.pAnnot->hr_hilo.loHash;
+	ULONG		ulHashVal = abuf.pAnnot->hr_hilo.loHash;
 	unsigned short int	trhlen;
 	int			L2blobRefresh = 0;
 	unsigned int            retryCount = 0, err = 0;
@@ -257,7 +257,7 @@ ASF_uint32_t ASFFFPIPv6ProcessAndSendFD(
 	ASFFFPGlobalStats_t     *gstats = asfPerCpuPtr(asf_gstats, smp_processor_id());
 	ASFFFPVsgStats_t	*vstats;
 	ASFFFPFlowStats_t	*flow_stats;
-	unsigned long		ulOrgSeqNum = 0, ulOrgAckNum = 0, ulLogId;
+	ULONG		ulOrgSeqNum = 0, ulOrgAckNum = 0, ulLogId;
 	int			iRetVal;
 	struct tcphdr		*ptcph = NULL;
 #endif
@@ -429,8 +429,8 @@ ASF_uint32_t ASFFFPIPv6ProcessAndSendFD(
 
 
 	flow = asf_ffp_ipv6_flow_lookup((ASF_IPv6Addr_t *)&(ip6h->saddr), (ASF_IPv6Addr_t *)&(ip6h->daddr),
-					*ptrhdrOffset/* ports*/, (unsigned long)anDev->ulVSGId,
-					(unsigned long)anDev->ulZoneId, nexthdr, &ulHashVal);
+					*ptrhdrOffset/* ports*/, (ULONG)anDev->ulVSGId,
+					(ULONG)anDev->ulZoneId, nexthdr, &ulHashVal);
 	asf_debug("ASF: %s Hash(%x:%x:%x:%x:%x:%x:%x:%x, %x:%x:%x:%x:%x:%x:%x:%x, 0x%lx, %d, %d)"\
 		" = 0x%08lx (hindex %lx) (hini 0x%lx) => %s\n",
 		anDev->ndev->name,
@@ -1127,7 +1127,7 @@ ASF_uint32_t ASFFFPIPv6ProcessAndSendPkt(
 {
 	struct ipv6hdr		*ip6h;
 	ffp_flow_t		*flow;
-	unsigned long		ulHashVal;
+	ULONG		ulHashVal;
 	unsigned short int	trhlen;
 	unsigned short int      *q;
 	int			L2blobRefresh = 0;
@@ -1140,12 +1140,12 @@ ASF_uint32_t ASFFFPIPv6ProcessAndSendPkt(
 	ASFFFPGlobalStats_t     *gstats = asfPerCpuPtr(asf_gstats, smp_processor_id());
 	ASFFFPVsgStats_t	*vstats;
 	ASFFFPFlowStats_t	*flow_stats;
-	unsigned long		ulOrgSeqNum = 0, ulOrgAckNum = 0, ulLogId;
+	ULONG		ulOrgSeqNum = 0, ulOrgAckNum = 0, ulLogId;
 	int			iRetVal;
 	struct tcphdr		*ptcph = NULL;
 #endif
 	unsigned int       *ptrhdrOffset;
-	unsigned long		ulZoneId;
+	ULONG		ulZoneId;
 	struct sk_buff		*skb;
 	ASFNetDevEntry_t	*anDev;
 	unsigned char		nexthdr;
@@ -2064,7 +2064,7 @@ static int asf_ffp_ipv6_init_flow_table()
 
 	/* allocate hash table */
 #ifdef ASF_FFP_USE_SRAM
-	addr = (unsigned long)(ASF_FFP_SRAM_BASE);
+	addr = (ULONG)(ASF_FFP_SRAM_BASE);
 	ffp_ipv6_flow_table = (ffp_bucket_t *) ioremap_flags(addr,
 			(sizeof(ffp_buc
 et_t) * ffp_ipv6_hash_buckets),
@@ -2152,7 +2152,7 @@ static void asf_ffp_ipv6_destroy_flow_table()
 
 	/* free the table bucket array */
 #ifdef ASF_FFP_USE_SRAM
-		iounmap((unsigned long *)(ffp_flow_table));
+		iounmap((ULONG *)(ffp_flow_table));
 #else
 		kfree(ffp_ipv6_flow_table);
 #endif

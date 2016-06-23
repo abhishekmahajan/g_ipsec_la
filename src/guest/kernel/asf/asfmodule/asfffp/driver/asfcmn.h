@@ -237,7 +237,7 @@ struct ASFNetDevEntry_s;
 
 #define ASF_VLAN_ARY_LEN	(4096)
 typedef struct ASFVlanDevArray_s {
-	unsigned long	   ulNumVlans;
+	ULONG	   ulNumVlans;
 	struct ASFNetDevEntry_s *pArray[ASF_VLAN_ARY_LEN];
 } ASFVlanDevArray_t;
 
@@ -350,9 +350,9 @@ static inline void asf_proto_csum_replace4(__sum16 *sum,
 static inline void asfCopyWords(unsigned int *dst, unsigned int *src, int len)
 {
 /* Trying out Subha 02/04  */
-  unsigned long int *p_dst, *p_src;
-  p_dst = (unsigned long int *)dst;
-  p_src = (unsigned long int *)src;
+  ULONG *p_dst, *p_src;
+  p_dst = (ULONG *)dst;
+  p_src = (ULONG *)src;
 #ifndef LITTLE_ENDIAN
 	if (ETH_HLEN == len) {
 		dst[0] = src[0];

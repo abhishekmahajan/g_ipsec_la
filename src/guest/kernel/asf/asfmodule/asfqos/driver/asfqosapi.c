@@ -228,7 +228,7 @@ static int prio_dequeue(struct asf_qdisc *sch, u32 *add_wait)
 			if (queue->shaper->toks >= len) {
 				queue->shaper->toks -= len;
 			} else {
-				unsigned long c_j = jiffies;
+				ULONG c_j = jiffies;
 
 				if (time_after(c_j, queue->shaper->l_j)) {
 
@@ -259,10 +259,10 @@ static int prio_dequeue(struct asf_qdisc *sch, u32 *add_wait)
 						continue;
 					}
 				} else {
-					unsigned long wait;
+					ULONG wait;
 
-					wait = (unsigned long)queue->shaper->l_j
-						- (unsigned long)c_j;
+					wait = (ULONG)queue->shaper->l_j
+						- (ULONG)c_j;
 
 					if ((*add_wait == 0) ||
 							(*add_wait > wait))
@@ -283,7 +283,7 @@ static int prio_dequeue(struct asf_qdisc *sch, u32 *add_wait)
 		if (shaper->toks >= len) {
 			shaper->toks -= len;
 		} else {
-			unsigned long c_j = jiffies;
+			ULONG c_j = jiffies;
 			if (time_after(c_j, shaper->l_j)) {
 
 				uint32_t wait =
@@ -310,10 +310,10 @@ static int prio_dequeue(struct asf_qdisc *sch, u32 *add_wait)
 						return 0;
 					}
 			} else {
-				unsigned long wait;
+				ULONG wait;
 
-				wait = (unsigned long)shaper->l_j
-						- (unsigned long)c_j;
+				wait = (ULONG)shaper->l_j
+						- (ULONG)c_j;
 
 				if ((*add_wait == 0) || (*add_wait > wait))
 						*add_wait = wait + 1;
@@ -359,7 +359,7 @@ void qos_dequeue(struct  asf_qdisc *sch)
 
 
 
-static void timer_handler(unsigned long data)
+static void timer_handler(ULONG data)
 {
 	struct asf_qdisc *sch = (struct asf_qdisc *)data;
 
@@ -372,7 +372,7 @@ static void timer_handler(unsigned long data)
 static int prio_tx_napi(struct napi_struct *napi, int budget)
 {
 	struct asf_qdisc *sch = (struct asf_qdisc *)napi->dev->asf_qdisc;
-	unsigned long start_time = jiffies;
+	ULONG start_time = jiffies;
 	unsigned int i = 0;
 	u32 add_wait = 0;
 
@@ -467,7 +467,7 @@ shape:
 		if (shaper->toks >= len) {
 			shaper->toks -= len;
 		} else {
-			unsigned long c_j = jiffies;
+			ULONG c_j = jiffies;
 			if (time_after(c_j, shaper->l_j)) {
 
 				uint32_t wait =
@@ -494,10 +494,10 @@ shape:
 						return 0;
 					}
 			} else {
-				unsigned long wait;
+				ULONG wait;
 
-				wait = (unsigned long)shaper->l_j
-						- (unsigned long)c_j;
+				wait = (ULONG)shaper->l_j
+						- (ULONG)c_j;
 
 				if ((*add_wait == 0) || (*add_wait > wait))
 						*add_wait = wait + 1;
@@ -528,7 +528,7 @@ shape:
 static int prio_drr_tx_napi(struct napi_struct *napi, int budget)
 {
 	struct asf_qdisc *sch = (struct asf_qdisc *)napi->dev->asf_qdisc;
-	unsigned long start_time = jiffies;
+	ULONG start_time = jiffies;
 	unsigned int i = 0;
 	u32 add_wait = 0;
 
@@ -629,7 +629,7 @@ static int qos_create_sch(ASF_uint32_t  ulVsgId,
 		napi_enable(&(prio_root->qos_napi));
 
 		setup_timer(&prio_root->timer, timer_handler,
-					(unsigned long)prio_root);
+					(ULONG)prio_root);
 	}
 	break;
 
@@ -664,7 +664,7 @@ static int qos_create_sch(ASF_uint32_t  ulVsgId,
 		napi_enable(&(prio_root->qos_napi));
 
 		setup_timer(&prio_root->timer, timer_handler,
-					(unsigned long)prio_root);
+					(ULONG)prio_root);
 	}
 	break;
 	default:
@@ -752,7 +752,7 @@ static int qos_add_shaper(ASF_uint32_t  ulVsgId,
 					prio_tx_napi, qos_budget);
 		napi_enable(&(root->qos_napi));
 		setup_timer(&root->timer, timer_handler,
-					(unsigned long)root);
+					(ULONG)root);
 	} else {
 		root = qdisc->dev->asf_qdisc;
 		if (!root) {
@@ -1029,7 +1029,7 @@ static int qos_flush_qdisc(ASF_uint32_t  ulVsgId,
 			napi_enable(&(x->qos_napi));
 
 			setup_timer(&x->timer, timer_handler,
-					(unsigned long)x);
+					(ULONG)x);
 			qdisc->dev->asf_qdisc = x;
 			break;
 		}

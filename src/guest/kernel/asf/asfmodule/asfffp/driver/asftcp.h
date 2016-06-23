@@ -36,29 +36,29 @@
 #define ASF_TCP_CLEAR_BIT(flow, bit) do { flow->tcpState.usReserved &= ~ASF_TCP_FLAGS_##bit; } while (0)
 
 
-static inline int asfTcpSeqWithin(unsigned long x, unsigned long low, unsigned long high)
+static inline int asfTcpSeqWithin(ULONG x, ULONG low, ULONG high)
 {
 	return ((high-low) >= (x-low));
 }
 
-static inline int asfTcpSeqLt(unsigned long x, unsigned long y)
+static inline int asfTcpSeqLt(ULONG x, ULONG y)
 {
 	return (int)(x-y) < 0;
 }
 
-static inline int asfTcpSeqLe(unsigned long x, unsigned long y)
+static inline int asfTcpSeqLe(ULONG x, ULONG y)
 {
 	return (int)(x-y) <= 0;
 }
 
 
-static inline int asfTcpSeqGt(unsigned long x, unsigned long y)
+static inline int asfTcpSeqGt(ULONG x, ULONG y)
 {
 	return (int)(x-y) > 0;
 }
 
 
-static inline int asfTimeStampLessThan(unsigned long ts_val1, unsigned long ts_val2)
+static inline int asfTimeStampLessThan(ULONG ts_val1, ULONG ts_val2)
 {
 	int diff = (ts_val2-ts_val1);
 	if ((diff >= 0) && (diff < ASF_TCP_TIMESTAMP_LIMIT))
@@ -68,7 +68,7 @@ static inline int asfTimeStampLessThan(unsigned long ts_val1, unsigned long ts_v
 
 
 
-static inline int asfGetTimeStamp(unsigned char *tcpopt, int optlen, unsigned long *ts_val)
+static inline int asfGetTimeStamp(unsigned char *tcpopt, int optlen, ULONG *ts_val)
 {
 
 	unsigned char *endptr;
@@ -90,7 +90,7 @@ static inline int asfGetTimeStamp(unsigned char *tcpopt, int optlen, unsigned lo
 			tcpopt += 3; /* 3 byte option length */
 			break;
 		case TCPOPT_TIMESTAMP:
-			*ts_val = ntohl(*((unsigned long *)  (tcpopt + 2)));
+			*ts_val = ntohl(*((ULONG *)  (tcpopt + 2)));
 			return 0;
 		default:
 			tcpopt += tcpopt[1];
@@ -104,7 +104,7 @@ static inline int asfGetTimeStamp(unsigned char *tcpopt, int optlen, unsigned lo
 static inline int asfTcpProcessOptions(ffp_flow_t *flow, unsigned char *tcpopt, int optlen)
 {
 	{
-		unsigned long   ts_val;
+		ULONG   ts_val;
 		if (asfGetTimeStamp(tcpopt, optlen, &ts_val) == 0) {
 			asf_debug("Subha: ts_val in packet = 0x%x, flow->ulTcptimeStamp = 0x%x\n", ts_val, (long unsigned int)flow->ulTcpTimeStamp);
 			if (!asfTimeStampLessThan(ts_val, flow->ulTcpTimeStamp-1)) {
@@ -118,9 +118,9 @@ static inline int asfTcpProcessOptions(ffp_flow_t *flow, unsigned char *tcpopt, 
 }
 
 static inline void asfTcpApplyDelta(ffp_flow_t *flow, ffp_flow_t *oth_flow, struct tcphdr *tcph,
-				    unsigned long ulSeqNum, unsigned long ulAckNum)
+				    ULONG ulSeqNum, ULONG ulAckNum)
 {
-	unsigned long   ulTmpDelta;
+	ULONG   ulTmpDelta;
 
 	/* Update ack number */
 	if (tcph->ack) {
@@ -147,10 +147,10 @@ int asfTcpCheckForOutOfSeq(ffp_flow_t *flow, ffp_flow_t *oth_flow,
 
 static inline void asfTcpUpdateState(
 				    ffp_flow_t      *flow,
-				    unsigned long   ulOrgSeqNum,
-				    unsigned long   ulOrgAckNum,
+				    ULONG   ulOrgSeqNum,
+				    ULONG   ulOrgAckNum,
 				    struct tcphdr   *tcph,
-				    unsigned long   data_len)
+				    ULONG   data_len)
 {
 	unsigned short usWindow;
 /* Subha:  Not required; as the information passed by the calling API is also in Host format

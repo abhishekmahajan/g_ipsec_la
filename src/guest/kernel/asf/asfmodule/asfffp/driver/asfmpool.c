@@ -49,7 +49,7 @@ extern int asf_enable;
 
 struct asf_poolInfo_s {
 	dma_addr_t paddr;
-	unsigned long *vaddr;
+	ULONG *vaddr;
 	struct asf_pool_s  *pHead ____cacheline_aligned_in_smp;
 } ;
 

@@ -146,7 +146,7 @@ static struct proc_dir_entry *secfp_dir;
 #define SECFP_PROC_IN_SA		"in_sa"
 
 #define GSTATS_SUM(a) (total.ul##a += gstats->ul##a)
-#define GSTATS_TOTAL(a) (unsigned long) total.ul##a
+#define GSTATS_TOTAL(a) (ULONG) total.ul##a
 static int display_secfp_proc_global_stats(char *page, char **start,
 					 off_t off, int count,
 					 int *eof, void *data)

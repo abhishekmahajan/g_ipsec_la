@@ -22,6 +22,7 @@
 #include <linux/tcp.h>
 #include <linux/udp.h>
 
+typedef unsigned int ULONG;
 typedef int (*fn_ptr)(struct sk_buff*, struct net_device*);
 extern int devfp_register_rx_hook_veth(fn_ptr);
 extern int devfp_register_tx_hook_veth(fn_ptr);

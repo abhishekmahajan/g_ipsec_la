@@ -678,7 +678,7 @@ int qos_enqueue_skb(struct sk_buff *skb,
 		 * We also need to align the buffer address to 16, such that
 		 * Fman will be able to reuse it on Rx.
 		 */
-		extra_offset = (unsigned long)(skb->data - offset) & 0xF;
+		extra_offset = (ULONG)(skb->data - offset) & 0xF;
 		if (likely((offset + extra_offset) <= skb_headroom(skb) &&
 			   (offset + extra_offset) <= MAX_FD_OFFSET)) {
 			/* We're good to go for recycling*/

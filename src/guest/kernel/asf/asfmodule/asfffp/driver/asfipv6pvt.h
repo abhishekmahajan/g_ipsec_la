@@ -47,19 +47,19 @@ extern int ffp_ipv6_max_flows;
 
 extern ptrIArry_tbl_t ffp_ipv6_ptrary;
 extern ffp_bucket_t *ffp_ipv6_flow_table;
-extern unsigned long asf_ffp_ipv6_hash_init_value;
+extern ULONG asf_ffp_ipv6_hash_init_value;
 
 static __u32 ipv6_rule_salt __read_mostly;
-static inline unsigned long ASFFFPIPv6ComputeFlowHash1(
+static inline ULONG ASFFFPIPv6ComputeFlowHash1(
 				ASF_IPv6Addr_t *ip6SrcIp,
 				ASF_IPv6Addr_t *ip6DestIp,
-				unsigned long ulPorts,
-				unsigned long ulVsgId,
-				unsigned long ulZoneId,
-				unsigned long initval)
+				ULONG ulPorts,
+				ULONG ulVsgId,
+				ULONG ulZoneId,
+				ULONG initval)
 {
-	unsigned long ulSrcIp = 0;
-	unsigned long ulDestIp = 0;
+	ULONG ulSrcIp = 0;
+	ULONG ulDestIp = 0;
 
 	ulPorts = (ulPorts & 0xffffffff);
 
@@ -97,11 +97,11 @@ static inline unsigned long ASFFFPIPv6ComputeFlowHash1(
 
 extern int endian_var;
 
-static inline unsigned long ASFFFPIPv6ComputeFlowHashEx(
+static inline ULONG ASFFFPIPv6ComputeFlowHashEx(
 				ASFFFPFlowTuple_t *tuple,
-				unsigned long ulVsgId,
-				unsigned long ulZoneId,
-				unsigned long initval)
+				ULONG ulVsgId,
+				ULONG ulZoneId,
+				ULONG initval)
 {
 
 	return ASFFFPIPv6ComputeFlowHash1((ASF_IPv6Addr_t *)(tuple->ipv6SrcIp),
@@ -110,7 +110,7 @@ static inline unsigned long ASFFFPIPv6ComputeFlowHashEx(
 		ulVsgId, ulZoneId, initval);
 }
 
-static inline ffp_bucket_t *asf_ffp_ipv6_bucket_by_hash(unsigned long ulHashVal)
+static inline ffp_bucket_t *asf_ffp_ipv6_bucket_by_hash(ULONG ulHashVal)
 {
 	return &ffp_ipv6_flow_table[FFP_IPV6_HINDEX(ulHashVal)];
 }
@@ -148,12 +148,12 @@ void ffp_ipv6_flow_free_rcu(struct rcu_head *rcu);
 void ffp_ipv6_flow_free(ffp_flow_t *flow);
 ffp_flow_t *ffp_ipv6_flow_alloc(void);
 ffp_flow_t *asf_ffp_ipv6_flow_lookup_by_tuple(ASFFFPFlowTuple_t *tpl,
-			unsigned long ulVsgId,
-			unsigned long ulZoneId,
-			unsigned long *pHashVal);
+			ULONG ulVsgId,
+			ULONG ulZoneId,
+			ULONG *pHashVal);
 ffp_flow_t *asf_ffp_ipv6_flow_lookup_in_bkt_ex(ASFFFPFlowTuple_t *tuple,
-				unsigned long ulVsgId,
-				unsigned long ulZoneId,
+				ULONG ulVsgId,
+				ULONG ulZoneId,
 				ffp_flow_t *pHead);
 
 #ifdef CONFIG_DPA

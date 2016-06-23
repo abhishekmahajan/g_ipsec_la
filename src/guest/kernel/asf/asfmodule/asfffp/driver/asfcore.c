@@ -124,11 +124,11 @@ int asf_default_mode = fwMode;
 ASF_boolean_t asf_fwd_func_on;
 ASF_boolean_t asf_term_func_on;
 ASF_boolean_t asf_ipsec_func_on;
-extern unsigned long asf_reasm_hash_list_size;
-extern unsigned long asf_reasm_num_cbs;
+extern ULONG asf_reasm_hash_list_size;
+extern ULONG asf_reasm_num_cbs;
 #ifdef ASF_IPV6_FP_SUPPORT
-extern unsigned long asf_ipv6_reasm_hash_list_size;
-extern unsigned long asf_ipv6_reasm_num_cbs;
+extern ULONG asf_ipv6_reasm_hash_list_size;
+extern ULONG asf_ipv6_reasm_num_cbs;
 extern int ffp_ipv6_max_flows;
 extern int ffp_ipv6_hash_buckets;
 
@@ -238,7 +238,7 @@ static unsigned int  ffp_inac_timer_pool_id = -1;
 ASF_boolean_t   asf_ffp_notify = ASF_FALSE;
 ASFFFPCallbackFns_t      ffpCbFns = {0};
 
-unsigned long asf_ffp_hash_init_value;
+ULONG asf_ffp_hash_init_value;
 
 extern struct net_device *__find_vlan_dev(struct net_device *real_dev,
 			u16 vlan_id);
@@ -264,10 +264,10 @@ static int ffp_cmd_create_flows(ASF_uint32_t  ulVsgId,
 		ASFFFPCreateFlowsInfo_t *p,
 		ffp_flow_t **pFlow1,
 		ffp_flow_t **pFlow2,
-		unsigned long *pHashVal);
+		ULONG *pHashVal);
 static int ffp_cmd_delete_flows(ASF_uint32_t  ulVsgId,
 			ASFFFPDeleteFlowsInfo_t *p,
-			unsigned long *pHashVal);
+			ULONG *pHashVal);
 static int ffp_cmd_update_flow(ASF_uint32_t ulVsgId,
 			ASFFFPUpdateFlowParams_t *p);
 
@@ -394,13 +394,13 @@ EXPORT_SYMBOL(ASFFFPRegisterTERMFunctions);
 
 static __u32 rule_salt __read_mostly;
 
-static inline unsigned long ASFFFPComputeFlowHash1(
-				unsigned long ulSrcIp,
-				unsigned long ulDestIp,
-				unsigned long ulPorts,
-				unsigned long ulVsgId,
-				unsigned long ulZoneId,
-				unsigned long initval)
+static inline ULONG ASFFFPComputeFlowHash1(
+				ULONG ulSrcIp,
+				ULONG ulDestIp,
+				ULONG ulPorts,
+				ULONG ulVsgId,
+				ULONG ulZoneId,
+				ULONG initval)
 {
 #ifdef CONFIG_DPA
 return ASFFFPComputeFlowHash1_DPAA(ulSrcIp, ulDestIp, ulPorts);
@@ -422,11 +422,11 @@ return ASFFFPComputeFlowHash1_DPAA(ulSrcIp, ulDestIp, ulPorts);
 #endif
 }
 
-static inline unsigned long ASFFFPComputeFlowHashEx(
+static inline ULONG ASFFFPComputeFlowHashEx(
 				ASFFFPFlowTuple_t *tuple,
-				unsigned long ulVsgId,
-				unsigned long ulZoneId,
-				unsigned long initval)
+				ULONG ulVsgId,
+				ULONG ulZoneId,
+				ULONG initval)
 {
 	return ASFFFPComputeFlowHash1(tuple->ulSrcIp, tuple->ulDestIp,
 		((endian_var == 1) ? ((tuple->usDestPort << 16) | (tuple->usSrcPort)): ((tuple->usSrcPort << 16)|(tuple->usDestPort))),
@@ -438,21 +438,21 @@ static inline unsigned long ASFFFPComputeFlowHashEx(
 	for (pos = (head)->pNext; prefetch(pos->pNext), pos != (head); \
 					pos = pos->pNext)
 
-static inline ffp_bucket_t *asf_ffp_bucket_by_hash(unsigned long ulHashVal)
+static inline ffp_bucket_t *asf_ffp_bucket_by_hash(ULONG ulHashVal)
 {
 	return &ffp_flow_table[FFP_HINDEX(ulHashVal)];
 }
 
 
 static inline ffp_flow_t *asf_ffp_flow_lookup_in_bkt(
-				unsigned long sip, unsigned long dip,
+				ULONG sip, ULONG dip,
 				uint32_t ports, unsigned char protocol,
-				unsigned long vsg, unsigned long szone,
+				ULONG vsg, ULONG szone,
 				ffp_flow_t *pHead)
 {
 	ffp_flow_t      *flow;
 #ifdef ASF_DEBUG
-	unsigned long ulCount = 0;
+	ULONG ulCount = 0;
 #endif
 
 	for (flow = pHead->pNext; flow != pHead; flow = flow->pNext) {
@@ -479,8 +479,8 @@ static inline ffp_flow_t *asf_ffp_flow_lookup_in_bkt(
 }
 
 static inline ffp_flow_t *asf_ffp_flow_lookup_in_bkt_ex(ASFFFPFlowTuple_t *tuple,
-				unsigned long ulVsgId,
-				unsigned long ulZoneId,
+				ULONG ulVsgId,
+				ULONG ulZoneId,
 				ffp_flow_t *pHead)
 {
 	return asf_ffp_flow_lookup_in_bkt(tuple->ulSrcIp, tuple->ulDestIp,
@@ -490,13 +490,13 @@ static inline ffp_flow_t *asf_ffp_flow_lookup_in_bkt_ex(ASFFFPFlowTuple_t *tuple
 }
 #ifdef CONFIG_DPA
 static inline ffp_flow_t  *asf_ffp_flow_lookup_DPAA(
-					unsigned long sip,
-					unsigned long dip,
+					ULONG sip,
+					ULONG dip,
 					uint32_t ports,
-					unsigned long vsg,
-					unsigned long szone,
+					ULONG vsg,
+					ULONG szone,
 					unsigned char protocol,
-					unsigned long HashVal)
+					ULONG HashVal)
 {
 	ffp_bucket_t *pHead;
 #ifdef USE_SRCIP_AS_HASH
@@ -612,12 +612,12 @@ EXPORT_SYMBOL(asf_dec_skb_buf_count);
  * The argument 'head' is head of circular list (actually bucket ponter).
  */
 static inline ffp_flow_t  *asf_ffp_flow_lookup(
-					unsigned long sip, unsigned long dip, unsigned int ports,
-					unsigned long vsg, unsigned long szone, unsigned char protocol, unsigned long *pHashVal)
+					ULONG sip, ULONG dip, unsigned int ports,
+					ULONG vsg, ULONG szone, unsigned char protocol, ULONG *pHashVal)
 {
 	ffp_flow_t *flow, *pHead;
 #ifdef ASF_DEBUG
-	unsigned long ulCount = 0;
+	ULONG ulCount = 0;
 #endif
 
 	*pHashVal = ASFFFPComputeFlowHash1(sip, dip, ports, vsg,
@@ -651,9 +651,9 @@ static inline ffp_flow_t  *asf_ffp_flow_lookup(
 }
 
 static inline ffp_flow_t *asf_ffp_flow_lookup_by_tuple(ASFFFPFlowTuple_t *tpl,
-			unsigned long ulVsgId,
-			unsigned long ulZoneId,
-			unsigned long *pHashVal)
+			ULONG ulVsgId,
+			ULONG ulZoneId,
+			ULONG *pHashVal)
 {
 	return asf_ffp_flow_lookup(tpl->ulSrcIp, tpl->ulDestIp,
 				(tpl->usSrcPort << 16)|tpl->usDestPort,
@@ -881,7 +881,7 @@ static inline ffp_flow_t *ffp_flow_by_id_ex(unsigned int ulIndex, unsigned int u
 	return (ffp_flow_t *) ((ffp_ptrary.pBase[ulIndex].ulMagicNum == ulMagicNum) ? ffp_ptrary.pBase[ulIndex].pData : NULL);
 }
 
-static inline void asfFfpSendLogEx(ffp_flow_t *flow, unsigned long ulMsgId, ASF_uchar8_t *aMsg, unsigned long ulHashVal)
+static inline void asfFfpSendLogEx(ffp_flow_t *flow, ULONG ulMsgId, ASF_uchar8_t *aMsg, ULONG ulHashVal)
 {
 	if (ffpCbFns.pFnAuditLog) {
 		ASFLogInfo_t	    li;
@@ -900,7 +900,7 @@ static inline void asfFfpSendLogEx(ffp_flow_t *flow, unsigned long ulMsgId, ASF_
 	}
 }
 
-static inline void asfFfpSendLog(ffp_flow_t *flow, unsigned long ulMsgId, unsigned long ulHashVal)
+static inline void asfFfpSendLog(ffp_flow_t *flow, ULONG ulMsgId, ULONG ulHashVal)
 {
 	return asfFfpSendLogEx(flow, ulMsgId, (ASF_uchar8_t *) "", ulHashVal);
 }
@@ -1083,12 +1083,12 @@ void asf_display_skb_list(struct sk_buff *skb, char *msg)
 	while (skb) {
 		iph = ip_hdr(skb);
 		count++;
-		data_len += iph->tot_len;
+		data_len += ntohs(iph->tot_len);
 		asf_debug(" Frag %d (rx %s %u.%u.%u.%u <-> %u.%u.%u.%u):"\
 			"skb->len %d iph->tot_len %u frag_off %u (sum %u)\n",
 			count, skb->dev->name,
 			NIPQUAD(iph->saddr), NIPQUAD(iph->daddr),
-			skb->len, iph->tot_len, iph->frag_off, data_len);
+			skb->len, ntohs(iph->tot_len), iph->frag_off, data_len);
 		asf_debug("	   [ip_ptr 0x%x skb->data 0x%x data[0]"\
 			"0x%02x data[1] 0x%02x ]\n",
 			iph, skb->data, skb->data[0], skb->data[1]);
@@ -1166,7 +1166,7 @@ ASF_void_t asf_skb_to_abuf(ASFBuffer_t *pAbuf,
 					ASFNetDevEntry_t *pNdev)
 {
 	struct sk_buff *skb = pAbuf->nativeBuffer;
-	unsigned long	ulPorts;
+	ULONG	ulPorts;
 	struct iphdr	*iph;
 	t_FmPrsResult	*pParse;
 	u8 *ptr;
@@ -1988,11 +1988,11 @@ int asf_ffp_devfp_rx_int(struct sk_buff *skb, struct net_device *real_dev)
 			}
 #endif
 			if (ret == ASF_DONE) {
-				asf_debug("Subha: ASFFFPIPv6ProcessAndSendPkt returned ret %d: ASF_DONE\n", ret);
+				asf_debug("Subha: asf_ffp_devfp_rx_int returned ret %d: ASF_DONE\n", ret);
 				ASF_RCU_READ_UNLOCK(bLockFlag);
 				return AS_FP_STOLEN;
 			} else {
-				asf_debug("Subha: ASFFFPIPv6ProcessAndSendPkt returned ret %d: ret_pkt\n", ret);
+				asf_debug("Subha: asf_ffp_devfp_rx_int returned ret %d: ret_pkt\n", ret);
 				skb_push(skb, x_hh_len);
 				goto ret_pkt;
 			}
@@ -2269,7 +2269,7 @@ ASF_void_t ASFFFPProcessAndSendFD(
 {
 	struct iphdr		*iph;
 	ffp_flow_t		*flow;
-	unsigned long		ulHashVal;
+	ULONG		ulHashVal;
 	unsigned short int	iphlen;
 	int			L2blobRefresh = 0;
 	unsigned int            retryCount = 0, err = 0;
@@ -2282,8 +2282,8 @@ ASF_void_t ASFFFPProcessAndSendFD(
 	ASFFFPGlobalStats_t     *gstats;
 	ASFFFPVsgStats_t	*vstats;
 	ASFFFPFlowStats_t	*flow_stats;
-	unsigned long		ulOrgSeqNum = 0, ulOrgAckNum = 0;
-	unsigned long           ulLogId;
+	ULONG		ulOrgSeqNum = 0, ulOrgAckNum = 0;
+	ULONG           ulLogId;
 	int			iRetVal;
 	struct tcphdr		*ptcph = NULL;
 	int			mtu;
@@ -3017,7 +3017,7 @@ ASF_void_t ASFFFPProcessAndSendPkt(
 {
 	struct iphdr		*iph;
 	ffp_flow_t		*flow;
-	unsigned long		ulHashVal;
+	ULONG		ulHashVal;
 	unsigned short int	trhlen;
 	unsigned short int	iphlen;
 	unsigned short int      *q;
@@ -3031,13 +3031,13 @@ ASF_void_t ASFFFPProcessAndSendPkt(
 	ASFFFPGlobalStats_t     *gstats = asfPerCpuPtr(asf_gstats, smp_processor_id());
 	ASFFFPVsgStats_t	*vstats;
 	ASFFFPFlowStats_t	*flow_stats;
-	unsigned long		ulOrgSeqNum = 0, ulOrgAckNum = 0, ulLogId;
+	ULONG		ulOrgSeqNum = 0, ulOrgAckNum = 0, ulLogId;
 	int			iRetVal;
 	struct tcphdr		*ptcph = NULL;
 #endif
 	int			tot_len;
 	unsigned int       *ptrhdrOffset;
-	unsigned long		ulZoneId;
+	ULONG		ulZoneId;
 	struct sk_buff		*skb;
 	ASFNetDevEntry_t	*anDev;
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM)
@@ -3678,6 +3678,9 @@ ASF_void_t ASFFFPProcessAndSendPkt(
 						asf_debug("Calling asfCopyWords\n");
 						asfCopyWords((unsigned int *)pSkb->data, (unsigned int *)flow->ipv4.n->ha, 6 );
 						asfCopyWords((unsigned int *)(pSkb->data + 6), (unsigned int *)flow->ipv4.n->dev->perm_addr,  6);
+						//To set packet type IP
+						*((short *)(pSkb->data + 12)) = __constant_htons(ETH_P_IP);
+						pSkb->protocol = __constant_htons(ETH_P_IP);
 #endif
 						if (flow->bPPPoE) {
 							/* PPPoE packet.. Set Payload length in PPPoE header */
@@ -4024,7 +4027,7 @@ ret_pkt_to_stk:
 #endif
 
 #endif /*(ASF_FEATURE_OPTION > ASF_MINIMUM) */
-	asf_debug_l2("  ret_pkt LABEL -- calling netif_receive_skb!\n");
+	asf_debug_l2("  ret_to_skt -- calling netif_receive_skb!\n");
 	ASF_netif_receive_skb(skb);
 	asf_debug_l2("  ret_pkt LABEL -- returning from function!\n");
 	return;
@@ -4752,7 +4755,7 @@ ASF_uint32_t ASFFFPRuntime (
 	switch (cmd) {
 	case ASF_FFP_CREATE_FLOWS:
 		{
-			unsigned long ulHashVal = 0;
+			ULONG ulHashVal = 0;
 			ASFFFPCreateFlowsResp_t resp;
 
 			XGSTATS_INC(CreateFlowsCmd);
@@ -4783,7 +4786,7 @@ ASF_uint32_t ASFFFPRuntime (
 
 	case ASF_FFP_DELETE_FLOWS:
 		{
-			unsigned long ulHashVal = 0;
+			ULONG ulHashVal = 0;
 			ASFFFPDeleteFlowsResp_t resp;
 
 			XGSTATS_INC(DeleteFlowsCmd);
@@ -5009,7 +5012,7 @@ static inline int ffp_flow_copy_info(ASFFFPFlowInfo_t *pInfo, ffp_flow_t *flow)
 	return ASFFFP_RESPONSE_SUCCESS;
 }
 
-static inline unsigned long asfSwapShorts(unsigned long ulPorts)
+static inline ULONG asfSwapShorts(ULONG ulPorts)
 {
 	unsigned char *p = (unsigned char *)  &ulPorts, temp;
 
@@ -5019,11 +5022,11 @@ static inline unsigned long asfSwapShorts(unsigned long ulPorts)
 }
 
 static int ffp_cmd_create_flows(ASF_uint32_t  ulVsgId, ASFFFPCreateFlowsInfo_t *p,
-				ffp_flow_t **pFlow1, ffp_flow_t **pFlow2, unsigned long *pHashVal)
+				ffp_flow_t **pFlow1, ffp_flow_t **pFlow2, ULONG *pHashVal)
 {
 	ffp_flow_t    *flow1, *flow2;
 	unsigned int  index1, index2;
-	unsigned long hash1, hash2;
+	ULONG hash1, hash2;
 	ffp_bucket_t  *bkt;
 	bool		bIPv6_flow1, bIPv6_flow2;
 #if 1 /* Subha: Part of ARP_ROUTE_CACHE_IN_FLOW */
@@ -5319,11 +5322,11 @@ down2:
 }
 
 
-static int ffp_cmd_delete_flows(ASF_uint32_t  ulVsgId, ASFFFPDeleteFlowsInfo_t *p, unsigned long *pHashVal)
+static int ffp_cmd_delete_flows(ASF_uint32_t  ulVsgId, ASFFFPDeleteFlowsInfo_t *p, ULONG *pHashVal)
 {
 	ffp_flow_t      *flow1, *flow2;
 	ffp_bucket_t    *bkt1, *bkt2;
-	unsigned long   hash1, hash2;
+	ULONG   hash1, hash2;
 	int	     rem_flow2_resources = 0;
 	bool		bIPv6;
 	/* first detach the flows */
@@ -5513,7 +5516,7 @@ static int ffp_cmd_delete_flows(ASF_uint32_t  ulVsgId, ASFFFPDeleteFlowsInfo_t *
 static int ffp_cmd_update_flow(ASF_uint32_t ulVsgId, ASFFFPUpdateFlowParams_t *p)
 {
 	ffp_flow_t *flow;
-	unsigned long   hash;
+	ULONG   hash;
 	bool		bIPv6;
 
 	bIPv6 = p->tuple.bIPv4OrIPv6 ? true : false;
@@ -5704,7 +5707,7 @@ int ASFFFPQueryFlowStats(ASF_uint32_t ulVsgId, ASFFFPQueryFlowStatsInfo_t *p)
 {
 	ffp_flow_t      *flow1, *flow2;
 	int	     bLockFlag, iResult;
-	unsigned long   hash;
+	ULONG   hash;
 
 	ASF_RCU_READ_LOCK(bLockFlag);
 	flow1 = asf_ffp_flow_lookup_by_tuple(&p->tuple, ulVsgId, p->ulZoneId, &hash);
@@ -5887,7 +5890,7 @@ unsigned int asfFfpInacRefreshTmrCb(unsigned int ulVSGId,
 #endif
 		flow1 = ffp_flow_by_id_ex(ulIndex, ulMagicNum);
 	if (flow1) {
-		unsigned long flow1_idle, flow2_idle, ulIdleTime;
+		ULONG flow1_idle, flow2_idle, ulIdleTime;
 
 #ifdef ASF_IPV6_FP_SUPPORT
 		if (bIPv6 == true)
@@ -6038,7 +6041,7 @@ static int asf_ffp_init_flow_table()
 
 	/* allocate hash table */
 #ifdef ASF_FFP_USE_SRAM
-	addr = (unsigned long)(ASF_FFP_SRAM_BASE);
+	addr = (ULONG)(ASF_FFP_SRAM_BASE);
 	ffp_flow_table = (ffp_bucket_t *) ioremap_flags(addr,
 			(sizeof(ffp_bucket_t) * ffp_hash_buckets),
 			PAGE_KERNEL | _PAGE_COHERENT);
@@ -6160,7 +6163,7 @@ static void asf_ffp_destroy_flow_table()
 
 	/* free the table bucket array */
 #ifdef ASF_FFP_USE_SRAM
-		iounmap((unsigned long *)(ffp_flow_table));
+		iounmap((ULONG *)(ffp_flow_table));
 #else
 		kfree(ffp_flow_table);
 #endif

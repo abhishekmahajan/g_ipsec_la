@@ -52,6 +52,7 @@
 #define BPID_INDEX 79
 #define BUF_INDOMAIN_INDEX 80
 #define ANNOTATION_ADDR_INDEX 87
+typedef unsigned int ULONG;
 enum {
 	ASF_SUCCESS = 0,
 	ASF_FAILURE = -1
@@ -92,7 +93,7 @@ typedef int ASF_int32_t;
 typedef short int ASF_int16_t;
 typedef char ASF_int8_t;
 typedef char ASF_char8_t;
-typedef unsigned long long ASF_uint64_t;
+typedef long ASF_uint64_t;
 typedef unsigned int ASF_uint32_t;
 typedef unsigned char ASF_uchar8_t;
 typedef unsigned char ASF_uint8_t;
@@ -249,7 +250,7 @@ typedef struct ASFTERMCacheEntryTuple_s {
 typedef struct ASFFFPL2blobConfig_s {
 	ASF_boolean_t	bl2blobRefreshSent;
 	ASF_uint32_t	ulL2blobMagicNumber;
-	unsigned long	ulOldL2blobJiffies;
+	ULONG	ulOldL2blobJiffies;
 } ASFFFPL2blobConfig_t;
 
 /****** Firewall API (FFP API) **********/
@@ -1181,12 +1182,12 @@ typedef struct ASFFFPGlobalStats_s {
 int ASFFFPQueryGlobalStats(ASFFFPGlobalStats_t *pStats);
 
 #ifdef CONFIG_DPA
-static inline unsigned long ASFFFPComputeFlowHash1_DPAA(
-				unsigned long ulSrcIp,
-				unsigned long ulDestIp,
-				unsigned long ulPorts)
+static inline ULONG ASFFFPComputeFlowHash1_DPAA(
+				ULONG ulSrcIp,
+				ULONG ulDestIp,
+				ULONG ulPorts)
 {
-	unsigned long long result;
+	ULONG long result;
 #ifdef USE_SRCIP_AS_HASH
 	result = ulSrcIp;
 #else
@@ -1196,7 +1197,7 @@ static inline unsigned long ASFFFPComputeFlowHash1_DPAA(
 	result = crc64_compute_hword((ulPorts >> 16), result);
 	result = crc64_compute_hword(ulPorts, result);
 #endif
-	return (unsigned long) result;
+	return (ULONG) result;
 }
 #endif
 

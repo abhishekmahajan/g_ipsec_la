@@ -28,7 +28,11 @@
 #endif
 #include <8021q/vlan.h>
 
-#if 0
+#define VIRTIO_DRIVER
+
+#ifdef VIRTIO_DRIVER
+//for Virtio driver
+#define GOOD_PACKET_LEN (ETH_HLEN + VLAN_HLEN + ETH_DATA_LEN)
 #else
 /* Subha: for e1000 changes */
 #include <e1000.h>
@@ -65,14 +69,14 @@ extern ASFFFPGlobalStats_t *asf_gstats;
 #define ASF_REASM_BASE   (GFAR_SRAM_PBASE + GFAR_SRAM_SIZE  + SECFP_TOT_SRAM_SIZE)
 #endif
 
-unsigned long asf_reasm_num_cbs = ASF_REASM_MAX_NUM_CBS;
-unsigned long asf_reasm_hash_list_size = ASF_REASM_MAX_HASH_LIST_SIZE;
+ULONG asf_reasm_num_cbs = ASF_REASM_MAX_NUM_CBS;
+ULONG asf_reasm_hash_list_size = ASF_REASM_MAX_HASH_LIST_SIZE;
 #define ASF_REASM_NUM_CB_HASH_TBL_ENTRIES (asf_reasm_hash_list_size)
 #define ASF_REASM_NUM_CBS		(asf_reasm_num_cbs)
 
 #ifdef ASF_IPV6_FP_SUPPORT
-unsigned long asf_ipv6_reasm_num_cbs = ASF_REASM_MAX_NUM_CBS;
-unsigned long asf_ipv6_reasm_hash_list_size = ASF_REASM_MAX_HASH_LIST_SIZE;
+ULONG asf_ipv6_reasm_num_cbs = ASF_REASM_MAX_NUM_CBS;
+ULONG asf_ipv6_reasm_hash_list_size = ASF_REASM_MAX_HASH_LIST_SIZE;
 #define ASF_IPV6_REASM_NUM_CB_HASH_TBL_ENTRIES (asf_ipv6_reasm_hash_list_size)
 #define ASF_IPV6_REASM_NUM_CBS		(asf_ipv6_reasm_num_cbs)
 #endif
@@ -188,14 +192,14 @@ struct asf_reasmList_s {
 
 struct asf_reasmHashList_s {
 	dma_addr_t paddr;
-	unsigned long *vaddr;
+	ULONG *vaddr;
 	struct asf_reasmList_s *pHead;
 } ;
 
 struct asf_reasmCbPtrArray_s {
 	struct {
 		dma_addr_t paddr;
-		unsigned long *vaddr;
+		ULONG *vaddr;
 		ptrIArry_tbl_t ptrArray;
 	} ptrArrayInfo[ASF_MAX_VSGS];
 };
@@ -272,7 +276,7 @@ int asfReasmInit(void)
 			ptr = asfPerCpuPtr(asf_ReasmCbHashList , ii);
 #ifdef ASF_REASM_USE_L2SRAM
 			asf_reasm_debug("ASF_REASM_BASE = 0x%x\r\n", ASF_REASM_BASE);
-			ptr->paddr  = (unsigned long) (ASF_REASM_BASE) +
+			ptr->paddr  = (ULONG) (ASF_REASM_BASE) +
 				      (ii * ASF_REASM_NUM_CB_HASH_TBL_ENTRIES *
 				       sizeof(struct asf_reasmCb_s *));
 			ptr->vaddr  = ioremap_flags(ptr->paddr,
@@ -1973,14 +1977,15 @@ int asfIpv4Fragment(struct sk_buff *skb,
 	bool bNewSkb = 1;
 	struct sk_buff *pSkb, *frag;
 
-#if 0
+#ifdef VIRTIO_DRIVER
+	
 #else
 	struct e1000_adapter *adapter;
 #endif
 
 	asf_reasm_debug("skb->len = %d, ulMTU=%d, ulDevXmitHdrLen = %d ip_tot_len =%d\r\n", skb->len,
-			ulMTU, ulDevXmitHdrLen, iph->tot_len);
-	if ((likely(iph->tot_len > ulMTU)) || (skb_shinfo(skb)->frag_list)) {
+			ulMTU, ulDevXmitHdrLen, ntohs(iph->tot_len));
+	if ((likely(ntohs(iph->tot_len) > ulMTU)) || (skb_shinfo(skb)->frag_list)) {
 		/* Fragmentation */
 		if (((skb->len <= ulMTU) && (skb_headroom(skb) > ulDevXmitHdrLen))
 			&& (!((skb->len - ihl) & 7))) {
@@ -2068,7 +2073,7 @@ int asfIpv4Fragment(struct sk_buff *skb,
 			pLastSkb = skb;
 			/* adjust other skb pointers */
 			len = (ulMTU & ~7);
-			bytesLeft = (iph->tot_len - ihl - len);
+			bytesLeft = (ntohs(iph->tot_len) - ihl - len);
 
 			tot_len = len+ihl;
 			/* The first fragment will be created at the end */
@@ -2109,8 +2114,12 @@ int asfIpv4Fragment(struct sk_buff *skb,
 #if 0 /* Subha: for e1000 */
 				skb2 = gfar_new_skb(netdev_priv(ndev));
 #else
+#ifdef VIRTIO_DRIVER
+				skb2 = netdev_alloc_skb_ip_align(ndev, GOOD_PACKET_LEN + EXTRA_HEADROOM);
+#else // e1000
 				adapter = (struct e1000_adapter *)(netdev_priv(ndev));
 				skb2 = netdev_alloc_skb_ip_align(ndev, adapter->rx_buffer_len + EXTRA_HEADROOM);
+#endif
 #endif
 #endif
 				if (skb2) {
@@ -2180,8 +2189,12 @@ int asfIpv4Fragment(struct sk_buff *skb,
 #if 0 /* Subha: for e1000 integration */
 			skb2 = gfar_new_skb(netdev_priv(ndev));
 #else
+#ifdef VIRTIO_DRIVER
+			skb2 = netdev_alloc_skb_ip_align(ndev, GOOD_PACKET_LEN + EXTRA_HEADROOM);
+#else
 			adapter = (struct e1000_adapter *)(netdev_priv(ndev));
 			skb2 = netdev_alloc_skb_ip_align(ndev, adapter->rx_buffer_len + EXTRA_HEADROOM);
+#endif
 #endif
 #endif
 			if (!skb2)
@@ -2258,7 +2271,8 @@ int asfIpv6Fragment(struct sk_buff *skb,
 	unsigned int ident = asfReasmGetNextId();
 	unsigned int	bytesLeft, len, ptr;
 	unsigned	char nexthdr;
-#if 0
+#ifdef VIRTIO_DRIVER
+
 #else
 	struct e1000_adapter *adapter;
 #endif
@@ -2320,8 +2334,12 @@ int asfIpv6Fragment(struct sk_buff *skb,
 #if 0 /* Subha: e1000 changes */
 		frag = gfar_new_skb(netdev_priv(skb->dev));
 #else
+#ifdef VIRTIO_DRIVER
+		frag = netdev_alloc_skb_ip_align(skb->dev, GOOD_PACKET_LEN + EXTRA_HEADROOM);
+#else
 		adapter = (struct e1000_adapter *)(netdev_priv(skb->dev));
 		frag = netdev_alloc_skb_ip_align(skb->dev, adapter->rx_buffer_len + EXTRA_HEADROOM);
+#endif
 #endif
 #endif
 

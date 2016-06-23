@@ -49,7 +49,7 @@ struct asf_tbf_data {
 						re-schedule NAPI */
 /* Variables */
 	u32		toks;		/* Current number of Bytes tokens */
-	unsigned long	l_j;		/* Last Time check-point in Jiffies */
+	ULONG	l_j;		/* Last Time check-point in Jiffies */
 };
 
 /* Scheduler queue profile */
