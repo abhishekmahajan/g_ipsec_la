@@ -3029,9 +3029,10 @@ void secfp_inHeaderMove(struct sk_buff *pHeadSkb, int encapMode)
 		    *ch_dst = *ch;
 		}
 		//Move mac header
-		skb_set_transport_header(pHeadSkb, IP_HEADER);
 		skb_set_mac_header(pHeadSkb,-IP_HEADER-pHeadSkb->mac_len );
 		skb_push(pHeadSkb, IP_HEADER);
+        skb_reset_transport_header(pHeadSkb);
+        skb_set_transport_header(pHeadSkb, IP_HEADER );
 	}
 #endif
 }

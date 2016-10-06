@@ -313,9 +313,28 @@ ASF_void_t asfctrl_ipsec_fn_VerifySPD(ASF_uint32_t ulVSGId,
 		if (skb1 != skb)
 			xfrm_state_hold(x);
 
+//#define  ASF_BYPASS_IPSTACK_RX
+#ifdef ASF_BYPASS_IPSTACK_RX
+		//This section of code is only for self terminated traffic
+		struct iphdr *iph1 = ip_hdr(skb1);
+     		struct rtable *rt1;
+			//required for skb->_refdst
+        	int err = ip_route_input_noref(skb1, iph1->daddr, iph1->saddr, iph1->tos, skb1->dev);
+       		rt1 = skb_rtable(skb1);
+		if(rt1->rt_flags & RTCF_LOCAL)
+		{
+			ip_local_deliver(skb1);
+			ASFCTRL_DBG("Direcly sending to asf_ip_local_deliver_finish rt->rt_flags %x %d\n", rt1->rt_flags,  __LINE__);
+			ASFCTRL_WARN("Local terminated traffic sent the packet to ip_local_deliver");
+		}
+		else
+	//End of the section of code for - self terminated traffic
+#endif
+		{
 		/*3. send the packet to slow path */
 		ASFCTRL_netif_receive_skb(skb1);
 		ASFCTRL_WARN(" sent the packet to slow path");
+		}
 	}
 
 	goto out;
