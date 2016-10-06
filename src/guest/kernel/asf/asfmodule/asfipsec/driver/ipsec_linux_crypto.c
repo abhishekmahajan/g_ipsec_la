@@ -217,16 +217,16 @@ static const char * get_auth_algo(unsigned char ucAuthAlgo)
 			auth_algo = ASF_IPSEC_AALG_AESXCBC;
 			break;
 		case SECFP_HMAC_SHA256:
-			auth_algo = ASF_IPSEC_AALG_SHA256HMAC ;
+			auth_algo = ASF_IPSEC_AALG_SHA256HMAC;
 			break;
 		case SECFP_HMAC_SHA384:
-			auth_algo = ASF_IPSEC_AALG_SHA384HMAC ;
+			auth_algo = ASF_IPSEC_AALG_SHA384HMAC;
 			break;
 		case SECFP_HMAC_SHA512:
-			auth_algo = ASF_IPSEC_AALG_SHA512HMAC ;
+			auth_algo = ASF_IPSEC_AALG_SHA512HMAC;
 			break;
 		case SECFP_HMAC_NULL:
-			auth_algo = ASF_IPSEC_AALG_NONE ;
+			auth_algo = ASF_IPSEC_AALG_NONE;
 			break;
 		default:
 			ASF_FP_LINUX_CRYPTO_WARN("unsupported auth algo %d\n",
@@ -835,6 +835,8 @@ int32_t asf_fp_linux_encap(outSA_t *pSA, struct sk_buff *skb,
 	struct iphdr *iph;
 	int hash;
 	__u8 protocol=0;
+	int esphSize = sizeof(*esph);
+	int crypto_ivsize;
 
 	ASF_FP_LINUX_CRYPTO_FENTRY;	
 	
@@ -846,6 +848,7 @@ int32_t asf_fp_linux_encap(outSA_t *pSA, struct sk_buff *skb,
 		ASF_FP_LINUX_CRYPTO_DEBUG("asf_fp_linux_encap using existing aead: %d\n",
 			 __LINE__);
                 aead = ptr_aead_out[hash];
+		crypto_ivsize = crypto_aead_ivsize(aead);
 	}
 	else
 	{
@@ -859,30 +862,30 @@ int32_t asf_fp_linux_encap(outSA_t *pSA, struct sk_buff *skb,
 	if(pSA->SAParams.bEncapsulationMode == ASF_IPSEC_SA_SAFLAGS_TUNNELMODE)
 	{
 		//copy ipheader before it get encrypted 
-		asf_mem_cpy((u8 *)skb->data - MAC_LEN, - (IP_HEADER + crypto_aead_ivsize(aead) 
-				+ sizeof(*esph)), MAC_LEN + IP_HEADER);	
+		asf_mem_cpy((u8 *)skb->data - MAC_LEN, - (IP_HEADER + crypto_ivsize 
+				+ esphSize), MAC_LEN + IP_HEADER);	
 		//FOR IPV4 copy tunnel ip address
-		saddr = (unsigned int *)(skb->data - ( crypto_aead_ivsize(aead) + sizeof(*esph) + 8));  
-		daddr = (unsigned int *)(skb->data - ( crypto_aead_ivsize(aead) + sizeof(*esph) + 4));  
+		saddr = (unsigned int *)(skb->data - ( crypto_ivsize + esphSize + 8));  
+		daddr = (unsigned int *)(skb->data - ( crypto_ivsize + esphSize + 4));  
 		*saddr = pSA->SAParams.tunnelInfo.addr.iphv4.saddr;
 		*daddr = pSA->SAParams.tunnelInfo.addr.iphv4.daddr;
 		network_hdr_len = skb_network_header_len(skb);
-		skb_set_network_header(skb, -(network_hdr_len + sizeof(*esph) + 
-					crypto_aead_ivsize(aead)));
-		skb_set_mac_header(skb, -(network_hdr_len + sizeof(*esph) + crypto_aead_ivsize(aead)));
-		skb_set_transport_header(skb, -(sizeof(*esph) + crypto_aead_ivsize(aead)));
+		skb_set_network_header(skb, -(network_hdr_len + esphSize + 
+					crypto_ivsize));
+		skb_set_mac_header(skb, -(network_hdr_len + esphSize + crypto_ivsize));
+		skb_set_transport_header(skb, -(esphSize + crypto_ivsize));
 	}
 	else// ASF_IPSEC_SA_SAFLAGS_TRANSPORTMODE
 	{
 		iph = (struct iphdr *)skb->data;
 		protocol = iph->protocol; //save protocol 
-		asf_mem_cpy((u8 *)skb->data - MAC_LEN, - (crypto_aead_ivsize(aead) + 
-			sizeof(*esph)), MAC_LEN + IP_HEADER);	//shifting mac+ip header bytes up 
+		asf_mem_cpy((u8 *)skb->data - MAC_LEN, - (crypto_ivsize + 
+			esphSize), MAC_LEN + IP_HEADER);	//shifting mac+ip header bytes up 
 		//mac pointing to old mac address  
 		skb_set_mac_header(skb, -MAC_LEN-1);
 		network_hdr_len = skb_network_header_len(skb);
-		skb_set_network_header(skb, -(sizeof(*esph) + crypto_aead_ivsize(aead)));
-		skb_set_transport_header(skb, -(sizeof(*esph) + crypto_aead_ivsize(aead)) + network_hdr_len);
+		skb_set_network_header(skb, -(esphSize + crypto_ivsize));
+		skb_set_transport_header(skb, -(esphSize + crypto_ivsize) + network_hdr_len);
         	skb_pull(skb, IP_HEADER);
 	
 	}
@@ -912,7 +915,7 @@ int32_t asf_fp_linux_encap(outSA_t *pSA, struct sk_buff *skb,
 	if(unlikely (err < 0))
 		goto error;
 	nfrags = err;
-	assoclen = sizeof(*esph);
+	assoclen = esphSize;
 	sglists = 1;
 	seqhilen = 0;
 
@@ -1009,7 +1012,7 @@ int32_t asf_fp_linux_encap(outSA_t *pSA, struct sk_buff *skb,
 	sg_init_table(sg, nfrags);
 
 	skb_to_sgvec(skb, sg,
-		 esph->enc_data + crypto_aead_ivsize(aead) - skb->data,
+		 esph->enc_data + crypto_ivsize - skb->data,
 		 clen + alen);
 
 	ASF_FP_LINUX_CRYPTO_DEBUG("Before encrypt asf_fp_linux_encap esph->seg_no = %u:\
@@ -1030,7 +1033,7 @@ int32_t asf_fp_linux_encap(outSA_t *pSA, struct sk_buff *skb,
 	}
 	else
 	{
-		sg_init_one(asg, esph, sizeof(*esph));
+		sg_init_one(asg, esph, esphSize);
 	}
 
 	aead_givcrypt_set_callback(req, 0, asf_fp_linux_encap_complete_cbk, skb);
@@ -1116,6 +1119,8 @@ int32_t asf_fp_linux_decap(inSA_t *pSA, struct sk_buff *skb,
 	int alen;
 	struct iphdr *iph;
  	int padlen;	
+	int esphSize = sizeof(*esph);
+	int crypto_ivsize;
 	ASF_FP_LINUX_CRYPTO_FENTRY;	
  
 	//Added to make aead efficient
@@ -1126,6 +1131,7 @@ int32_t asf_fp_linux_decap(inSA_t *pSA, struct sk_buff *skb,
               	ASF_FP_LINUX_CRYPTO_DEBUG("asf_fp_linux_decap using existing aead: %d\n",
 				 __LINE__);
         	aead = ptr_aead_in[hash];
+		crypto_ivsize = crypto_aead_ivsize(aead);
 	}
 	else
 	{
@@ -1134,17 +1140,17 @@ int32_t asf_fp_linux_decap(inSA_t *pSA, struct sk_buff *skb,
 		goto out;
 	}
 
-	skb->len += sizeof(*esph);
-	skb->data -= sizeof(*esph);
+	skb->len += esphSize;
+	skb->data -= esphSize;
 
-	elen = skb->len - sizeof(*esph) - crypto_aead_ivsize(aead);
+	elen = skb->len - esphSize - crypto_ivsize;
 
 
 	ASF_FP_LINUX_CRYPTO_DEBUG("asf_fp_linux_decap skb->len = %u sizeof(*esph) = %u \
-			elen = %u crypto_aead_ivsize(aead) = %u: %d\n", skb->len, sizeof(*esph),
-			elen, crypto_aead_ivsize(aead), __LINE__);
+			elen = %u crypto_aead_ivsize(aead) = %u: %d\n", skb->len, esphSize,
+			elen, crypto_ivsize, __LINE__);
 
-	if (unlikely(!pskb_may_pull(skb, sizeof(*esph) + crypto_aead_ivsize(aead))))
+	if (unlikely(!pskb_may_pull(skb, esphSize + crypto_ivsize)))
 		goto out;
 
 	if (unlikely(elen <= 0))
@@ -1156,7 +1162,7 @@ int32_t asf_fp_linux_decap(inSA_t *pSA, struct sk_buff *skb,
 
 	nfrags = err;
 
-	assoclen = sizeof(*esph);
+	assoclen = esphSize;
 	sglists = 1;
 	seqhilen = 0;
 
@@ -1186,7 +1192,7 @@ int32_t asf_fp_linux_decap(inSA_t *pSA, struct sk_buff *skb,
 
 	sg_init_table(sg, nfrags);
 
-	skb_to_sgvec(skb, sg, sizeof(*esph) + crypto_aead_ivsize(aead), elen);
+	skb_to_sgvec(skb, sg, esphSize + crypto_ivsize, elen);
 
 	if (pSA->SAParams.bUseExtendedSequenceNumber)
 	{
@@ -1198,7 +1204,7 @@ int32_t asf_fp_linux_decap(inSA_t *pSA, struct sk_buff *skb,
 	} 
 	else
 	{
-		sg_init_one(asg, esph, sizeof(*esph));
+		sg_init_one(asg, esph, esphSize);
 	}
 
 	aead_request_set_callback(req, 0, asf_fp_linux_decap_complete_cbk, skb);
@@ -1244,8 +1250,8 @@ int32_t asf_fp_linux_decap(inSA_t *pSA, struct sk_buff *skb,
 		}	
 		skb->len -= padlen; 
 		iph->protocol = tail[0];	
-		iph->tot_len = htons(skb->len + skb_network_header_len(skb) -(sizeof(*esph) 
-				+ crypto_aead_ivsize(aead)));
+		iph->tot_len = htons(skb->len + skb_network_header_len(skb) -(esphSize 
+				+ crypto_ivsize));
 		iph->check = 0x00;
 		iph->check = (ip_fast_csum((u8 *)iph, iph->ihl));
         	//asf_ipsec_hex_dump(skb->data-14-20, skb->len+14+20);
@@ -1264,14 +1270,14 @@ int32_t asf_fp_linux_decap(inSA_t *pSA, struct sk_buff *skb,
 					((skb->data-skb_network_header_len(skb)));
 
 	pskb_trim(skb,skb->len - crypto_aead_authsize(aead) - padlen); 
-	__skb_pull(skb, (sizeof(*esph) + crypto_aead_ivsize(aead)));
+	__skb_pull(skb, (esphSize + crypto_ivsize));
 
 //	asf_ipsec_hex_dump(skb->data, skb->len);
 
 	if(likely(aead != NULL))
 	{
 		//IV size is added in skb cb
-		skb->cb[SECFP_IV_DATA_INDEX] = crypto_aead_ivsize(aead);
+		skb->cb[SECFP_IV_DATA_INDEX] = crypto_ivsize;
 		ASF_FP_LINUX_CRYPTO_DEBUG("After decap asf_fp_linux_encap \
 			skb->cb[SECFP_IV_DATA_INDEX] = 0x%x skb->cb[SECFP_IPHDR_INDEX] = 0x%x:\
 			 %d\n", skb->cb[SECFP_IV_DATA_INDEX], skb->cb[SECFP_IPHDR_INDEX], __LINE__);
