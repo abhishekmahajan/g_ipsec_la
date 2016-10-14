@@ -1594,6 +1594,22 @@ static inline int secfp_try_fastPathOutv4(
 	pIPSecPolicyPPStats = &(pSA->PolicyPPStats[smp_processor_id()]);
 	pIPSecPolicyPPStats->NumOutBoundInPkts++;
 	/* todo Check if there is enough head room and tail room */
+	/* Added headroom and tailroom check before IPSec encryption */	
+        if ((skb_tailroom(skb1) < ASF_IPSEC_NEEDED_TAILROOM)
+                || (skb_headroom(skb1) < ASF_IPSEC_NEEDED_HEADROOM)) {
+                int headroom, tailroom;
+	        gfp_t flags = in_interrupt() ? GFP_ATOMIC : GFP_KERNEL;
+
+                tailroom = ASF_IPSEC_NEEDED_TAILROOM - skb_tailroom(skb1);
+                headroom = ASF_IPSEC_NEEDED_HEADROOM - skb_headroom(skb1);
+
+                if (pskb_expand_head(skb, (headroom > 0) ? headroom : 0,
+                        (tailroom > 0) ? tailroom : 0, flags)) {
+                        ASFIPSEC_ERR("Packet does not have enough"
+                                "headroom & tailroom for IPSEC");
+                        return 0;
+                }
+        }
 
 	/* Fragment handling and TTL decrement already done in FW Fast Path */
 #ifndef ASF_SECFP_PROTO_OFFLOAD
