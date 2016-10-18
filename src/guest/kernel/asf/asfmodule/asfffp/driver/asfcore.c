@@ -3344,12 +3344,13 @@ ASF_void_t ASFFFPProcessAndSendPkt(
 		q = (unsigned short *)  ptrhdrOffset;
 		if (iph->protocol == IPPROTO_UDP) {
 			XGSTATS_INC(UdpPkts);
-			if (((iph->tot_len-iphlen) < 8) ||
-				(ntohs(*(q + 2)) > (iph->tot_len-iphlen))) {
+			if (((ntohs(iph->tot_len)-iphlen) < 8) ||
+				(ntohs(*(q + 2)) > (ntohs(iph->tot_len)-iphlen))) {
 				/* Udp header length is invalid */
 #if (ASF_FEATURE_OPTION > ASF_MINIMUM)
 				gstats->ulErrIpProtoHdr++;
 #endif
+				asf_debug("dropping packet - Udp header length is invalid\n");
 				asfFfpSendLog(flow, ASF_LOG_ID_INVALID_UDP_HDRLEN, ulHashVal);
 				goto drop_pkt;
 			}
