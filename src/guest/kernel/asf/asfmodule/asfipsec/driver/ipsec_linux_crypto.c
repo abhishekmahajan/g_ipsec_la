@@ -188,14 +188,15 @@ void asf_ipsec_hex_dump(u8 *ptr, unsigned int len)
 }
 /* This function is used to copy data.
 */
-void asf_mem_cpy(u8 *ptr, int offset, unsigned int len)
+inline void asf_mem_cpy(u8 *ptr, int offset, unsigned int len)
 {
-	int i;
+	/*int i;
 	for(i=0; i < len; i++)
 	{
 		*(ptr + offset) = *(ptr);
 		ptr++;
-	}
+	}*/
+	asfCopyWords((unsigned int*)(ptr + offset), (unsigned int*)ptr, len);
 }
 
 /* Get auth algo name from authalgo

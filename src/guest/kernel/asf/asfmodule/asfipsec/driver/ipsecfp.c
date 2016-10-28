@@ -3026,10 +3026,12 @@ void secfp_inHeaderMove(struct sk_buff *pHeadSkb, int encapMode)
 		shift_len = IP_HEADER + ESP_LEN + pHeadSkb->cb[SECFP_IV_DATA_INDEX];
 		ch = (char *)(pHeadSkb->data - shift_len - MAC_LEN);
 		ch_dst = (char *)(pHeadSkb->data - MAC_LEN);
-		for (i=0; i< MAC_LEN; i++,ch++,ch_dst++)
+		//removed for loop for MAC header movement
+		/*for (i=0; i< MAC_LEN; i++,ch++,ch_dst++)
 		{
 		    *ch_dst = *ch;
-		}
+		}*/
+		asfCopyWords((unsigned int*)ch_dst, (unsigned int*)ch, MAC_LEN);
 		skb_set_transport_header(pHeadSkb, IP_HEADER);
 		skb_set_mac_header(pHeadSkb,-pHeadSkb->mac_len);
 	}
@@ -3040,10 +3042,12 @@ void secfp_inHeaderMove(struct sk_buff *pHeadSkb, int encapMode)
 		shift_len =  ESP_LEN + pHeadSkb->cb[SECFP_IV_DATA_INDEX];
 		ch = (char *)(pHeadSkb->data - shift_len -1);
 		ch_dst = (char *)(pHeadSkb->data - 1);
-		for (i = MAC_LEN + IP_HEADER-1 ; i>=0 ; i--,ch--,ch_dst--)
+		//removed for loop for MAC header and ip header movement
+		/*for (i = MAC_LEN + IP_HEADER-1 ; i>=0 ; i--,ch--,ch_dst--)
 		{
 		    *ch_dst = *ch;
-		}
+		}*/
+		asfCopyWords((unsigned int*)ch_dst, (unsigned int*)ch, MAC_LEN + IP_HEADER);
 		//Move mac header
 		skb_set_mac_header(pHeadSkb,-IP_HEADER-pHeadSkb->mac_len );
 		skb_push(pHeadSkb, IP_HEADER);
