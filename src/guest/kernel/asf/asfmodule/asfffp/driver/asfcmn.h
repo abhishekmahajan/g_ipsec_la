@@ -371,28 +371,8 @@ static inline void asfCopyWords(unsigned int *dst, unsigned int *src, int len)
 			memcpy(dst, src, len);
 	}
 #else
-	if (len == ETH_HLEN) {
-		unsigned long *src_p, *dst_p;
-                unsigned int *dst_p4, *src_p4;
-                int16_t *dst_p2, *src_p2;
-                src_p = src;
-                dst_p = dst;
-
-                *dst_p++ = *src_p++;
-
-                dst_p4 = (unsigned int*)dst_p;
-                src_p4 = (unsigned int*)src_p;
-                *dst_p4++ = *src_p4++;
-
-                dst_p2 = (int16_t*)dst_p;
-                src_p2 = (int16_t*)src_p;
-                *dst_p2++ = *src_p2++;
-
-        } else {
-	{
-		asf_debug("Copying %d len from dst0x%x to src0x%x\n", len, *dst, *src);
-		memcpy(dst, src, len);
-	}
+	asf_debug("Copying %d len from dst0x%x to src0x%x\n", len, *dst, *src);
+	memcpy(dst, src, len);
 #endif
 }
 

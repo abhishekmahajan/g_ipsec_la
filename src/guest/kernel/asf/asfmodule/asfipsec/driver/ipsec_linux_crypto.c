@@ -862,9 +862,10 @@ int32_t asf_fp_linux_encap(outSA_t *pSA, struct sk_buff *skb,
 	// Check if it is tunnel / transport mode
 	if(pSA->SAParams.bEncapsulationMode == ASF_IPSEC_SA_SAFLAGS_TUNNELMODE)
 	{
-		//copy ipheader before it get encrypted 
+		//copy MAC header + Control info (12 bits) from IP header before it get encrypted 
 		asf_mem_cpy((u8 *)skb->data - MAC_LEN, - (IP_HEADER + crypto_ivsize 
-				+ esphSize), MAC_LEN + IP_HEADER);	
+				+ esphSize), (MAC_LEN + IP_HEADER - 8));
+
 		//FOR IPV4 copy tunnel ip address
 		saddr = (unsigned int *)(skb->data - ( crypto_ivsize + esphSize + 8));  
 		daddr = (unsigned int *)(skb->data - ( crypto_ivsize + esphSize + 4));  

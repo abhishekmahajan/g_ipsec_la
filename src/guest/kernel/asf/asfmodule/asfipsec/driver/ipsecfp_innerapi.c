@@ -2934,12 +2934,15 @@ unsigned int secfp_createOutSA(
 		return SECFP_FAILURE;
 #endif
 	}
+
+#ifndef ASF_FP_LINUX_CRYPTO
 	/* New API for virtio IPsec */
 	if (!bVal)
 		local_bh_enable();
 	secfp_createOutSAVIpsec(pSA);
 	if (!bVal)
 		local_bh_disable();
+#endif
 
 	ulIndex = ptrIArray_add(&secFP_OutSATable, pSA);
 	if (ulIndex < secFP_OutSATable.nr_entries) {
@@ -3014,7 +3017,7 @@ unsigned int secfp_createOutSA(
 }
 
 /* Out SA Modification function */
-unsigned int secfp_ModifyOutSA(unsigned long int ulVSGId,
+unsigned int secfp_ModifyOutSA(ULONG ulVSGId,
 				ASFIPSecRuntimeModOutSAArgs_t *pModSA)
 {
 	outSA_t *pOutSA = NULL;

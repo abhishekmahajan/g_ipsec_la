@@ -2050,6 +2050,7 @@ void secfp_outComplete(struct device *dev, u32 *pdesc,
 #ifndef ASF_QOS
 	struct netdev_queue *txq;
 	struct net_device       *netdev;
+	int cpu = smp_processor_id();
 #endif
 #if defined(CONFIG_ASF_SEC4x) && !defined(ASF_QMAN_IPSEC)
 	struct aead_edesc *desc;
@@ -2201,17 +2202,24 @@ void secfp_outComplete(struct device *dev, u32 *pdesc,
 #else
 		txq = netdev_get_tx_queue(skb->dev, skb->queue_mapping);
 		netdev = skb->dev;
-//To clear ip_summed before sending to HW to avoid corruption by HW
+		//To clear ip_summed before sending to HW to avoid corruption by HW
 		skb->ip_summed = 0;
+
+		/* Added same locks which are used by kernel before transmitting
+		   packets are added before calling asfDevHardXmit */
+		HARD_TX_LOCK(netdev, txq, cpu);
+
 		if (asfDevHardXmit(skb->dev, skb) != 0) {
 #ifndef ASF_QMAN_IPSEC
 			/*TODO: DPAA driver always consumes skb */
 			ASFSkbFree(skb);
 #endif
+			HARD_TX_UNLOCK(netdev, txq);
 			return;
 		} else
 			netdev->trans_start = txq->trans_start = jiffies;
 #endif
+		HARD_TX_UNLOCK(netdev, txq);
 		pIPSecPPGlobalStats->ulTotOutProcPkts++;
 	} else {
 		ASFIPSEC_DEBUG("Need to call fragmentation module ");
