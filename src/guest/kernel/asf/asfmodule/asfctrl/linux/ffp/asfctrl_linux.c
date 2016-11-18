@@ -185,7 +185,7 @@ ASF_void_t asfctrl_invalidate_sessions_by_vsg(ASF_uint32_t ulVSGId)
 
 #ifdef ASFCTRL_IPSEC_FP_SUPPORT
 	if (fn_ipsec_vsg_magic_update)
-		fn_ipsec_vsg_magic_update();
+		fn_ipsec_vsg_magic_update(ulVSGId);
 #endif
 	ASFCTRL_DBG("Exit:ulConfigMagicNumber =%d", asfctrl_vsg_config_id);
 	ASFCTRL_FUNC_EXIT;
@@ -205,7 +205,7 @@ ASF_void_t  asfctrl_invalidate_l2blob(void)
 
 #ifdef ASFCTRL_IPSEC_FP_SUPPORT
 	if (fn_ipsec_vsg_magic_update)
-		fn_ipsec_vsg_magic_update();
+		fn_ipsec_vsg_magic_update(ASF_DEF_VSG);
 #endif
 	ASFCTRL_DBG("Exit:ulL2blobMagic =%d", asfctrl_vsg_l2blobconfig_id);
 }

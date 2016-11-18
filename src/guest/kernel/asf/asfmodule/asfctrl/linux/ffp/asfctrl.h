@@ -169,7 +169,7 @@ typedef void (*asfctrl_ipsec_l2blob_update)(struct sk_buff *skb,
 					ASF_uint32_t hh_len,
 					ASF_uint16_t ulDeviceID);
 
-typedef void (*asfctrl_ipsec_vsg_magicnum_update)(void);
+typedef void (*asfctrl_ipsec_vsg_magicnum_update)(ASF_uint32_t ulVSGId);
 
 extern void asfctrl_register_ipsec_func(asfctrl_ipsec_get_flow_info   p_flow,
 					asfctrl_ipsec_l2blob_update  p_l2blob,
